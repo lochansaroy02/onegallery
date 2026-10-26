@@ -85,25 +85,29 @@ class InstanceServer(QObject):
             sock.disconnected.connect(sock.deleteLater)
 
 
-class FileOpenFilter(QObject):
+class MacApplication(QGuiApplication):
     """macOS: Finder opens pictures by sending the app FileOpen events (also at launch),
-    not by passing them as arguments. Events that arrive together are opened together."""
+    not by passing them as arguments. Events that arrive together are opened together.
 
-    def __init__(self, parent=None):
-        super().__init__(parent)
+    This overrides event() rather than installing an application-wide event filter: such a
+    filter hands every object's events to Python, and PySide aborts on Qt Quick's internal
+    objects (an assertion in Arch's PySide6 build)."""
+
+    def __init__(self, argv):
+        super().__init__(argv)
         self.gallery = None
         self.pending: list[str] = []
         self.timer = QTimer(self, singleShot=True, interval=150)
         self.timer.timeout.connect(self.flush)
 
-    def eventFilter(self, obj, event):
+    def event(self, event):
         if event.type() == QEvent.Type.FileOpen:
             path = event.file() or event.url().toLocalFile()
             if path:
                 self.pending.append(path)
                 self.timer.start()
             return True
-        return False
+        return super().event(event)
 
     def flush(self):
         if self.gallery is not None and self.pending:
@@ -251,16 +255,15 @@ def main():
     if SELF_TEST:
         sys.exit(self_test())
     args = sys.argv[1:]
-    app = QGuiApplication.instance() or QGuiApplication(sys.argv)
-    file_open = FileOpenFilter(app)
-    app.installEventFilter(file_open)
+    app = QGuiApplication.instance() or (MacApplication if sys.platform == "darwin" else QGuiApplication)(sys.argv)
     files = external.paths_from_args(args)
     if "--new-instance" not in args and forward_to_running_instance(files):
         return  # the running Gallery window shows the files
     app, engine, gallery = create_app(files=files)
     server = InstanceServer(gallery)  # noqa: F841 (kept alive for the app's lifetime)
-    file_open.gallery = gallery
-    file_open.timer.start()  # files Finder sent while the window was being built
+    if isinstance(app, MacApplication):
+        app.gallery = gallery
+        app.timer.start()  # files Finder sent while the window was being built
     signal.signal(signal.SIGINT, signal.SIG_DFL)  # Ctrl+C in a terminal quits
     sys.exit(app.exec())
 
