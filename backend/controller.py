@@ -181,8 +181,8 @@ class Gallery(QObject):
         if not accent:
             palette = QGuiApplication.palette()
             role = getattr(QPalette.ColorRole, "Accent", QPalette.ColorRole.Highlight)
-            # Qt reads the desktop's accent colour on Linux and Windows
-            accent = palette.color(role).name() if sys.platform in ("linux", "win32") else ""
+            # Qt reads the desktop's accent colour on Linux, Windows and macOS
+            accent = palette.color(role).name() if sys.platform in ("linux", "win32", "darwin") else ""
         if accent != self._system_accent:
             self._system_accent = accent
             self.systemAccentChanged.emit()
@@ -587,8 +587,13 @@ class Gallery(QObject):
 
     @Property(bool, constant=True)
     def globalMenuAvailable(self):
-        """True when a global menu (KDE Global Menu widget) is listening on D-Bus."""
-        if sys.platform != "linux" or os.environ.get("ONEGALLERY_NO_GLOBAL_MENU"):
+        """True when a global menu is there: the Mac menu bar, or the KDE Global Menu widget
+        listening on D-Bus."""
+        if os.environ.get("ONEGALLERY_NO_GLOBAL_MENU"):
+            return False
+        if sys.platform == "darwin":
+            return True
+        if sys.platform != "linux":
             return False
         try:
             from PySide6.QtDBus import QDBusConnection
@@ -783,6 +788,15 @@ class Gallery(QObject):
     @Property(bool, constant=True)
     def isWindows(self):
         return IS_WINDOWS
+
+    @Property(bool, constant=True)
+    def isMac(self):
+        return sys.platform == "darwin"
+
+    @Property(bool, constant=True)
+    def lockScreenSupported(self):
+        """macOS shows the desktop picture on the lock screen: there is no separate one."""
+        return sys.platform != "darwin"
 
     @Slot(str)
     def openWithDialog(self, path):

@@ -27,12 +27,14 @@ StyledMenu {
         }
         AppMenuItem {
             text: qsTr("Lock screen")
+            visible: gallery.lockScreenSupported
             iconName: "lock"
             shortcutText: "Ctrl+Shift+L"
             onTriggered: gallery.setAsWallpaper(menu.info.path, "lockscreen")
         }
         AppMenuItem {
             text: qsTr("Wallpaper and lock screen")
+            visible: gallery.lockScreenSupported
             iconName: "layers"
             onTriggered: gallery.setAsWallpaper(menu.info.path, "both")
         }

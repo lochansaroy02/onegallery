@@ -12,10 +12,10 @@ from datetime import datetime
 from pathlib import Path
 from urllib.parse import quote
 
-from PySide6.QtCore import QMimeData, QMimeDatabase, QUrl
+from PySide6.QtCore import QFile, QMimeData, QMimeDatabase, QUrl
 from PySide6.QtGui import QDesktopServices, QGuiApplication
 
-from . import IS_WINDOWS, NO_WINDOW
+from . import IS_MAC, IS_WINDOWS, NO_WINDOW
 from .settings import mount_point
 
 log = logging.getLogger(__name__)
@@ -83,7 +83,10 @@ def trash_files(paths: list[str]) -> tuple[list[str], list[str]]:
             if not os.path.exists(p):
                 trashed.append(p)  # already gone: just drop it from the index
                 continue
-            if _send2trash is not None:
+            if IS_MAC:
+                if not QFile.moveToTrash(p):
+                    raise OSError("macOS refused to move it to the Trash")
+            elif _send2trash is not None:
                 _send2trash(p)  # Recycle Bin on Windows, freedesktop trash on Linux
             elif IS_WINDOWS:
                 raise RuntimeError("the Recycle Bin needs send2trash (bundled with the installer)")
@@ -157,6 +160,9 @@ def _app_dirs() -> list[str]:
 
 def apps_for_file(path: str) -> list[dict]:
     """Desktop applications that declare support for the file's MIME type."""
+    if IS_MAC:
+        from . import macos
+        return macos.apps_for_file(path)
     mime = QMimeDatabase().mimeTypeForFile(path)
     wanted = {mime.name(), *mime.parentMimeTypes(), *mime.aliases()}
     wanted.add(mime.name().split("/")[0] + "/*")
@@ -211,6 +217,9 @@ def windows_default_apps() -> bool:
 
 
 def launch_desktop_app(desktop_file: str, paths: list[str]) -> bool:
+    if IS_MAC:  # desktop_file is the .app path from apps_for_file
+        from . import macos
+        return macos.open_with(desktop_file, paths)
     entry = _read_desktop(desktop_file)
     if not entry:
         return False
@@ -274,6 +283,9 @@ def default_viewer_status(mimes: list[str]) -> str:
     or "windows" (Windows decides in Settings > Default apps)."""
     if IS_WINDOWS:
         return "windows"
+    if IS_MAC:
+        from . import macos
+        return macos.default_viewer_status(mimes)
     if not desktop_file_installed():
         return "not-installed"
     parser = _read_mimeapps()
@@ -286,6 +298,9 @@ def default_viewer_status(mimes: list[str]) -> str:
 
 def set_default_viewer(mimes: list[str]) -> None:
     """Make Gallery the default app for the image types (writes ~/.config/mimeapps.list)."""
+    if IS_MAC:
+        from . import macos
+        return macos.set_default_viewer(mimes)
     if not desktop_file_installed():
         raise RuntimeError("Install the launcher first (packaging/install-user.sh or the Arch package)")
     done = False

@@ -163,10 +163,11 @@ QtObject {
                 }
                 MenuSpec {
                     text: qsTr("Lock Screen"); shortcut: "Ctrl+Shift+L"; bindKey: true
+                    visible: gallery.lockScreenSupported
                     enabled: app.viewingPicture && gallery.wallpaperSupported
                     onTriggered: gallery.setAsWallpaper(app.viewer.info.path, "lockscreen")
                 }
-                MenuSpec { text: qsTr("Wallpaper and Lock Screen"); enabled: app.viewingPicture; onTriggered: gallery.setAsWallpaper(app.viewer.info.path, "both") }
+                MenuSpec { text: qsTr("Wallpaper and Lock Screen"); visible: gallery.lockScreenSupported; enabled: app.viewingPicture; onTriggered: gallery.setAsWallpaper(app.viewer.info.path, "both") }
             }
             MenuSpec {
                 text: qsTr("Print…"); shortcut: "Ctrl+P"; bindKey: true

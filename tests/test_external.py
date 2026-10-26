@@ -5,6 +5,7 @@ import shutil
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 TMP = tempfile.mkdtemp(prefix="onegallery-ext-test-")
 os.environ.setdefault("ONEGALLERY_HOME", os.path.join(TMP, "home"))
@@ -67,7 +68,12 @@ class ExternalFolderTests(unittest.TestCase):
 
 
 class DefaultViewerTests(unittest.TestCase):
+    """The freedesktop way (mimeapps.list), also when the tests run on a Mac."""
+
     def setUp(self):
+        patch = mock.patch.object(actions, "IS_MAC", False)
+        patch.start()
+        self.addCleanup(patch.stop)
         self.env = {k: os.environ.get(k) for k in ("XDG_CONFIG_HOME", "XDG_DATA_HOME", "PATH")}
         self.config = os.path.join(TMP, "cfg")
         self.data = os.path.join(TMP, "data")

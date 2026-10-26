@@ -21,12 +21,14 @@ def tearDownModule():
 
 @unittest.skipIf(backend.IS_WINDOWS, "Linux folder layout")
 class MigrateOldName(unittest.TestCase):
+    """The Linux layout (also what running from source used on a Mac)."""
     def setUp(self):
         self.root = Path(tempfile.mkdtemp(dir=TMP))
         self.config, self.data, self.cache = (self.root / d for d in ("config", "share", "cache"))
         env = {"XDG_CONFIG_HOME": str(self.config), "XDG_DATA_HOME": str(self.data),
                "XDG_CACHE_HOME": str(self.cache), "XDG_DATA_DIRS": str(self.root / "none")}
         patches = [mock.patch.dict(os.environ, env), mock.patch.object(backend, "_home", None),
+                   mock.patch.object(backend, "IS_MAC", False), mock.patch.object(backend, "IS_LINUX", True),
                    mock.patch.object(backend, "CONFIG_DIR", self.config / "onegallery"),
                    mock.patch.object(backend, "DATA_DIR", self.data / "onegallery"),
                    mock.patch.object(backend, "CACHE_DIR", self.cache / "onegallery")]
@@ -89,6 +91,49 @@ class MigrateOldName(unittest.TestCase):
         with mock.patch.object(backend, "_home", str(self.root)):
             self.assertEqual(backend.migrate_old_name(), [])
         self.assertTrue((self.data / "lgallery").is_dir())
+
+
+@unittest.skipIf(backend.IS_WINDOWS, "Mac folder layout")
+class MigrateToMacLibrary(unittest.TestCase):
+    """On a Mac, a library from running the source (Linux-style folders) moves into ~/Library."""
+
+    def setUp(self):
+        self.root = Path(tempfile.mkdtemp(dir=TMP))
+        self.config, self.data, self.cache = (self.root / d for d in ("config", "share", "cache"))
+        self.support = self.root / "Library" / "Application Support" / "One Gallery"
+        self.caches = self.root / "Library" / "Caches" / "One Gallery"
+        env = {"XDG_CONFIG_HOME": str(self.config), "XDG_DATA_HOME": str(self.data),
+               "XDG_CACHE_HOME": str(self.cache)}
+        patches = [mock.patch.dict(os.environ, env), mock.patch.object(backend, "_home", None),
+                   mock.patch.object(backend, "IS_MAC", True), mock.patch.object(backend, "IS_LINUX", False),
+                   mock.patch.object(backend, "CONFIG_DIR", self.support),
+                   mock.patch.object(backend, "DATA_DIR", self.support),
+                   mock.patch.object(backend, "CACHE_DIR", self.caches)]
+        for p in patches:
+            p.start()
+            self.addCleanup(p.stop)
+
+    def test_settings_and_library_share_one_folder(self):
+        (self.config / "lgallery").mkdir(parents=True)
+        (self.config / "lgallery" / "config.json").write_text("{}")
+        (self.data / "lgallery" / "private").mkdir(parents=True)
+        (self.data / "lgallery" / "index.db").write_bytes(b"db")
+        (self.cache / "lgallery" / "thumbs").mkdir(parents=True)
+        backend.migrate_old_name()
+        self.assertEqual((self.support / "index.db").read_bytes(), b"db")
+        self.assertEqual((self.support / "config.json").read_text(), "{}")
+        self.assertTrue((self.support / "private").is_dir())
+        self.assertTrue((self.caches / "thumbs").is_dir())
+        self.assertTrue((self.data / "lgallery").is_symlink())
+        self.assertEqual(backend.migrate_old_name(), [])  # only once
+
+    def test_newer_onegallery_folders_win(self):
+        (self.data / "lgallery").mkdir(parents=True)
+        (self.data / "lgallery" / "index.db").write_bytes(b"old")
+        (self.data / "onegallery").mkdir(parents=True)
+        (self.data / "onegallery" / "index.db").write_bytes(b"new")
+        backend.migrate_old_name()
+        self.assertEqual((self.support / "index.db").read_bytes(), b"new")
 
 
 if __name__ == "__main__":

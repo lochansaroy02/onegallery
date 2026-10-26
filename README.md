@@ -1,6 +1,6 @@
 # One Gallery
 
-One Gallery is a desktop photo and video gallery for Arch-based Linux (Manjaro) on KDE Plasma, styled after Samsung One UI's Gallery app. You choose the folders it shows, including folders on other drives. It indexes them in the background and lists your pictures and videos newest first, grouped by day, the way a phone gallery does.
+One Gallery is a desktop photo and video gallery for Arch-based Linux (Manjaro) on KDE Plasma, styled after Samsung One UI's Gallery app. You choose the folders it shows, including folders on other drives. It indexes them in the background and lists your pictures and videos newest first, grouped by day, the way a phone gallery does. It also runs on [Windows](#windows) and [macOS](#macos).
 
 > **Renamed from LGallery.** Your settings, library, favorites, private album and saved originals move over by themselves the first time One Gallery starts (`~/.config/lgallery` → `~/.config/onegallery`, and the same for `~/.local/share` and `~/.cache`; on Windows `%APPDATA%\LGallery` → `%APPDATA%\OneGallery` and `%LOCALAPPDATA%\LGallery` → `%LOCALAPPDATA%\OneGallery`). The command is now `onegallery`. `./update.sh` replaces an old install, and the AUR package is now `onegallery` (it replaces `lgallery`).
 
@@ -104,6 +104,58 @@ The result is `dist\OneGallery-<version>-setup.exe`, plus the unpacked app in `d
 Options: `-NoFaces` leaves out OpenCV (People), which saves about 40 MB. `-NoFfmpeg` leaves out video thumbnails. `-SkipTests` skips the unit tests, and `-NoInstaller` stops after `OneGallery.exe`.
 
 The app icon is `packaging/windows/onegallery.ico`. It's made from `packaging/icon.svg` by `python packaging/windows/make_icon.py`.
+
+## macOS
+
+One Gallery also runs on macOS 13 (Ventura) or newer. The download is for Apple Silicon Macs (M1 and later); on an Intel Mac, [build it yourself](#building-the-mac-app).
+
+**Install:**
+1. Download `OneGallery-<version>-macos-arm64.dmg` from the [Releases page](https://github.com/lochansaroy02/onegallery/releases).
+2. Open the `.dmg` and drag **One Gallery** onto the **Applications** folder.
+3. Eject the disk image and open One Gallery from Applications or Launchpad.
+4. The app isn't signed with an Apple Developer ID yet, so the first time macOS says it can't check it for malware. Click **Done** (not *Move to Trash*), then:
+   - **macOS 15 (Sequoia) and newer:** open **System Settings → Privacy & Security**, scroll down to *"One Gallery" was blocked*, click **Open Anyway**, and confirm with your password.
+   - **macOS 13 and 14:** in Finder, right-click (or Control-click) One Gallery in Applications, choose **Open**, then **Open** again.
+   - **Or, in Terminal:** `xattr -dr com.apple.quarantine "/Applications/One Gallery.app"`
+
+   You only need to do this once.
+5. **Video thumbnails** need ffmpeg, which this build doesn't include. Install it with [Homebrew](https://brew.sh): `brew install ffmpeg`. One Gallery finds it by itself. Videos play without it.
+
+**Open pictures from Finder in One Gallery:** open **Settings → Default image viewer → Set as default**. One Gallery must be in Applications and opened from there once. You can also right-click a picture in Finder and choose **Open With → One Gallery**.
+
+**Uninstall:** drag One Gallery from Applications to the Trash. Your settings and index stay in `~/Library/Application Support/One Gallery` and `~/Library/Caches/One Gallery`; delete those folders to remove everything.
+
+**On macOS:**
+- *Delete* moves files to the Trash.
+- *Show in folder* opens Finder with the file selected.
+- *Open with* lists the Mac apps that open the file, like Finder does.
+- *Set as* sets the desktop picture. The lock screen shows the desktop picture, so there's no separate lock-screen option. The first time, macOS asks to let One Gallery control System Events; allow it.
+- The menus are in the Mac menu bar.
+- The accent colour follows the accent colour in System Settings.
+- *Share* offers *Copy to Clipboard*.
+
+### Building the Mac app
+
+On a Mac with Python 3.11 or newer (`brew install python@3.13`):
+
+```bash
+git clone https://github.com/lochansaroy02/onegallery.git
+cd onegallery
+packaging/macos/build.sh
+```
+
+The result is `dist/OneGallery-<version>-macos-<arch>.dmg`, plus the app itself in `dist/One Gallery.app`. It builds for the Mac it runs on: `arm64` on Apple Silicon, `x86_64` on Intel. The script:
+1. makes `build/venv-mac` and installs the Python packages;
+2. downloads ffmpeg and ffprobe for video thumbnails;
+3. runs the unit tests;
+4. bundles everything with PyInstaller (`packaging/macos/onegallery.spec`);
+5. signs the app ad hoc (there's no Apple Developer ID, hence the one-time *Open Anyway*);
+6. checks the bundled app with `--self-test`: interface, video playback, printing, private album and ffmpeg;
+7. packs it into a `.dmg` with a shortcut to Applications.
+
+Options: `--no-faces` leaves out OpenCV (People), `--no-ffmpeg` leaves out video thumbnails, `--skip-tests` skips the unit tests, and `--no-dmg` stops after the app. Set `BUILD_PYTHON=/path/to/python` to build with an existing environment instead of making `build/venv-mac` (it saves about 1 GB). The build needs about 3 GB of free disk space.
+
+The app icon is `packaging/macos/onegallery.icns`. It's made from `packaging/icon.svg` by `python packaging/macos/make_icns.py`.
 
 ## Install from source on Arch / Manjaro
 
@@ -434,7 +486,9 @@ To fix only the packaging of the same version (a dependency, say), raise `pkgrel
 | Face thumbnails | `~/.cache/onegallery/faces/` |
 | Wallpaper / lock screen copies | `~/.local/share/onegallery/wallpapers/` (the 8 most recent; the wallpaper keeps working if the original moves) |
 
-The paths follow `XDG_CONFIG_HOME`, `XDG_DATA_HOME` and `XDG_CACHE_HOME`. Setting `ONEGALLERY_HOME=/some/dir` puts all three under one directory, which is useful for testing. Set `ONEGALLERY_LOG=DEBUG` for verbose logs.
+On macOS, everything above is in `~/Library/Application Support/One Gallery/` (the same names, without `onegallery/`), and the caches are in `~/Library/Caches/One Gallery/`.
+
+On Linux, the paths follow `XDG_CONFIG_HOME`, `XDG_DATA_HOME` and `XDG_CACHE_HOME`. Setting `ONEGALLERY_HOME=/some/dir` puts all three under one directory, which is useful for testing. Set `ONEGALLERY_LOG=DEBUG` for verbose logs.
 
 ## What is scanned
 
@@ -490,6 +544,7 @@ qml/                  Main.qml, Theme.qml (all colours/sizes), views, components
 packaging/            .desktop file, icon, PKGBUILD, user install script
 packaging/aur/        AUR packages (onegallery, onegallery-git) and publish.sh
 packaging/windows/    Windows build: PyInstaller spec, Inno Setup script, build.ps1, icon
+packaging/macos/      Mac build: PyInstaller spec, build.sh, icon
 tools/                sample generator, UI smoke test
 tests/                backend tests
 ```

@@ -270,11 +270,14 @@ Item {
                     subtitle: gallery.defaultViewer === "windows"
                               ? qsTr("Choose One Gallery for your picture types in Windows Settings › Default apps")
                               : gallery.defaultViewer === "default"
-                              ? qsTr("Pictures you open in Dolphin or any file manager open in One Gallery")
+                              ? (gallery.isMac ? qsTr("Pictures you open in Finder open in One Gallery")
+                                               : qsTr("Pictures you open in Dolphin or any file manager open in One Gallery"))
                               : gallery.defaultViewer === "not-installed"
-                              ? qsTr("Install the launcher first (packaging/install-user.sh or the Arch package)")
+                              ? (gallery.isMac ? qsTr("Move One Gallery to Applications and open it from there first")
+                                               : qsTr("Install the launcher first (packaging/install-user.sh or the Arch package)"))
                               : gallery.defaultViewer === "partial"
                               ? qsTr("One Gallery opens some picture types. Set it for all of them?")
+                              : gallery.isMac ? qsTr("Open pictures from Finder in One Gallery. Their folders are not added to the library.")
                               : qsTr("Open pictures from Dolphin in One Gallery. Their folders are not added to the library.")
                     PillButton {
                         compact: true

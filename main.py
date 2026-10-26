@@ -8,7 +8,7 @@ import signal
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import QObject, QSize, Qt, QUrl
+from PySide6.QtCore import QEvent, QObject, QSize, Qt, QTimer, QUrl
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 from PySide6.QtGui import QGuiApplication, QIcon, QPixmap
 from PySide6.QtQml import QQmlApplicationEngine
@@ -83,6 +83,32 @@ class InstanceServer(QObject):
 
             sock.readyRead.connect(read)
             sock.disconnected.connect(sock.deleteLater)
+
+
+class FileOpenFilter(QObject):
+    """macOS: Finder opens pictures by sending the app FileOpen events (also at launch),
+    not by passing them as arguments. Events that arrive together are opened together."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.gallery = None
+        self.pending: list[str] = []
+        self.timer = QTimer(self, singleShot=True, interval=150)
+        self.timer.timeout.connect(self.flush)
+
+    def eventFilter(self, obj, event):
+        if event.type() == QEvent.Type.FileOpen:
+            path = event.file() or event.url().toLocalFile()
+            if path:
+                self.pending.append(path)
+                self.timer.start()
+            return True
+        return False
+
+    def flush(self):
+        if self.gallery is not None and self.pending:
+            files, self.pending = self.pending, []
+            self.gallery.openFiles(files)
 
 
 class ThemeIconProvider(QQuickImageProvider):
@@ -226,11 +252,15 @@ def main():
         sys.exit(self_test())
     args = sys.argv[1:]
     app = QGuiApplication.instance() or QGuiApplication(sys.argv)
+    file_open = FileOpenFilter(app)
+    app.installEventFilter(file_open)
     files = external.paths_from_args(args)
     if "--new-instance" not in args and forward_to_running_instance(files):
         return  # the running Gallery window shows the files
     app, engine, gallery = create_app(files=files)
     server = InstanceServer(gallery)  # noqa: F841 (kept alive for the app's lifetime)
+    file_open.gallery = gallery
+    file_open.timer.start()  # files Finder sent while the window was being built
     signal.signal(signal.SIGINT, signal.SIG_DFL)  # Ctrl+C in a terminal quits
     sys.exit(app.exec())
 
