@@ -239,6 +239,8 @@ def self_test() -> int:
         for name, passed in checks.items():
             lines.append(f"{'ok  ' if passed else 'FAIL'} {name}")
             ok &= bool(passed)
+        if not vault.AVAILABLE:
+            lines.append(f"     cryptography: {vault.IMPORT_ERROR}")
         gallery.shutdown()
     except BaseException as exc:  # report anything, including SystemExit from create_app
         lines.append(f"FAIL startup: {exc!r}")

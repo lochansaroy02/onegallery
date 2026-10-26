@@ -48,11 +48,35 @@ Write-Host "One Gallery $version" -ForegroundColor Green
 
 # ---- 1. Python environment -----------------------------------------------------------------
 Step "Python environment (build\venv)"
+# Only Python 3.11-3.13: newer ones get packages PyInstaller can't bundle yet (on 3.15 the
+# private album's cryptography failed the self-test). "py -3" would take the newest Python
+# installed, so try the one on PATH (actions/setup-python's) first, then the py launcher.
+$supported = @("3.11", "3.12", "3.13")
+function Python-Version($exe, $pyArgs) {
+    if (-not (Get-Command $exe -ErrorAction SilentlyContinue)) { return $null }
+    try { (& $exe @pyArgs -c "import sys; print('%d.%d' % sys.version_info[:2])" 2>$null | Select-Object -First 1) }
+    catch { $null }
+}
+if (Test-Path build\venv\Scripts\python.exe) {
+    $venvVersion = Python-Version (Resolve-Path build\venv\Scripts\python.exe).Path
+    if ($venvVersion -notin $supported) {
+        Write-Host "    build\venv has Python $venvVersion; making it again"
+        Remove-Item -Recurse -Force build\venv
+    }
+}
 if (-not (Test-Path build\venv\Scripts\python.exe)) {
-    if (Get-Command py -ErrorAction SilentlyContinue) { Run py -3 -m venv build\venv }
-    else { Run python -m venv build\venv }
+    $base = $null
+    $candidates = @(@{ Exe = "python"; Args = @() })
+    foreach ($v in "3.13", "3.12", "3.11") { $candidates += @{ Exe = "py"; Args = @("-$v") } }
+    foreach ($c in $candidates) {
+        if ((Python-Version $c.Exe $c.Args) -in $supported) { $base = $c; break }
+    }
+    if (-not $base) { throw "Python 3.11-3.13 not found. Install it: winget install Python.Python.3.13" }
+    $venvArgs = @($base.Args) + @("-m", "venv", "build\venv")
+    Run $base.Exe @venvArgs
 }
 $py = (Resolve-Path build\venv\Scripts\python.exe).Path
+Write-Host "    $(& $py --version)"
 Run $py -m pip install --quiet --upgrade pip
 $packages = @("-r", "requirements.txt", "pyinstaller", "send2trash", "watchdog", "pillow-heif")
 if (-not $NoFaces) { $packages += "opencv-python-headless" }

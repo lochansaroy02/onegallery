@@ -31,10 +31,12 @@ try:
     from cryptography.exceptions import InvalidTag
     from cryptography.hazmat.primitives.ciphers.aead import AESGCM
     AVAILABLE = True
-except ImportError:  # python-cryptography not installed
+    IMPORT_ERROR = ""
+except ImportError as exc:  # python-cryptography not installed (or not bundled)
     AESGCM = None
     InvalidTag = Exception
     AVAILABLE = False
+    IMPORT_ERROR = str(exc)
 
 VERSION = 1
 MAGIC = b"LGV1"
