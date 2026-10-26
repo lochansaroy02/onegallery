@@ -86,7 +86,7 @@ Popup {
             Text {
                 width: parent.width
                 wrapMode: Text.Wrap
-                text: qsTr("Untick the folders Gallery should skip, including everything inside them. Their pictures leave the gallery; the files stay on disk.")
+                text: qsTr("Untick the folders One Gallery should skip, including everything inside them. Their pictures leave the gallery; the files stay on disk.")
                 color: Theme.textSecondary
                 font.pixelSize: Theme.fontSmall + 1
             }

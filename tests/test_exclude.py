@@ -6,8 +6,8 @@ import sys
 import tempfile
 import unittest
 
-TMP = tempfile.mkdtemp(prefix="lgallery-exclude-test-")
-os.environ.setdefault("LGALLERY_HOME", os.path.join(TMP, "home"))
+TMP = tempfile.mkdtemp(prefix="onegallery-exclude-test-")
+os.environ.setdefault("ONEGALLERY_HOME", os.path.join(TMP, "home"))
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 

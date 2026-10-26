@@ -1,6 +1,6 @@
 """Collections: GPS, places, stories, people.  Run: python -m unittest discover -s tests
 
-The People test needs the face models; point LGALLERY_TEST_MODELS at a folder containing
+The People test needs the face models; point ONEGALLERY_TEST_MODELS at a folder containing
 face_detection_yunet_2023mar.onnx, face_recognition_sface_2021dec.onnx, lena.jpg and
 messi5.jpg (OpenCV sample images) or it is skipped.
 """
@@ -14,8 +14,8 @@ import unittest
 from datetime import date, datetime, timedelta
 from fractions import Fraction
 
-TMP = tempfile.mkdtemp(prefix="lgallery-coll-test-")
-os.environ.setdefault("LGALLERY_HOME", os.path.join(TMP, "home"))
+TMP = tempfile.mkdtemp(prefix="onegallery-coll-test-")
+os.environ.setdefault("ONEGALLERY_HOME", os.path.join(TMP, "home"))
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -124,12 +124,12 @@ class StoriesTests(unittest.TestCase):
         self.assertTrue(result[1]["items"][0]["full"].startswith("image://full/"))
 
 
-@unittest.skipUnless(os.environ.get("LGALLERY_TEST_MODELS") and faces.engine_available(),
+@unittest.skipUnless(os.environ.get("ONEGALLERY_TEST_MODELS") and faces.engine_available(),
                      "face models / OpenCV not available")
 class PeopleTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        src = os.environ["LGALLERY_TEST_MODELS"]
+        src = os.environ["ONEGALLERY_TEST_MODELS"]
         db.init()
         faces.MODELS_DIR.mkdir(parents=True, exist_ok=True)
         shutil.copy(os.path.join(src, "face_detection_yunet_2023mar.onnx"), faces.model_path("detector"))

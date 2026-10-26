@@ -3,7 +3,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "lgallery"
+name = "onegallery"
 version = "0.3.0"
 description = "A One UI-style photo gallery for Linux / KDE Plasma"
 readme = "README.md"
@@ -19,7 +19,7 @@ people = ["opencv-python-headless>=4.8", "numpy"]
 all = ["pillow-heif>=0.16", "watchdog>=4.0", "send2trash>=1.8", "opencv-python-headless>=4.8", "numpy"]
 
 [project.scripts]
-lgallery = "main:main"
+onegallery = "main:main"
 
 [tool.setuptools]
 py-modules = ["main"]

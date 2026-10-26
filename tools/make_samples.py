@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Generate a folder of sample photos for testing LGallery's scroll performance.
+"""Generate a folder of sample photos for testing One Gallery's scroll performance.
 
-    python tools/make_samples.py ~/Pictures/lgallery-samples --count 5000 [--videos 40]
+    python tools/make_samples.py ~/Pictures/onegallery-samples --count 5000 [--videos 40]
 
 Images get random EXIF DateTimeOriginal values over the last few years (some get
 none, so the mtime fallback is exercised), a mix of orientations and formats, and

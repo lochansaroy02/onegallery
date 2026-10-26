@@ -1,14 +1,14 @@
 [Desktop Entry]
 Type=Application
-Name=Gallery
+Name=One Gallery
 GenericName=Photo Gallery
 Comment=Browse the pictures in your folders by date, One UI style
-Exec=lgallery %F
-TryExec=lgallery
-Icon=lgallery
+Exec=onegallery %F
+TryExec=onegallery
+Icon=onegallery
 Terminal=false
 Categories=Graphics;Viewer;Photography;Qt;KDE;
-Keywords=photos;pictures;images;gallery;albums;
-StartupWMClass=lgallery
+Keywords=photos;pictures;images;gallery;albums;lgallery;
+StartupWMClass=onegallery
 MimeType=image/jpeg;image/png;image/webp;image/gif;image/bmp;image/tiff;image/heic;image/heif;video/mp4;video/quicktime;video/x-matroska;video/webm;video/x-msvideo;video/3gpp;video/mpeg;video/ogg;
 StartupNotify=true

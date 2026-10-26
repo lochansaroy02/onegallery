@@ -206,8 +206,8 @@ def windows_open_with(path: str) -> bool:
 
 
 def windows_default_apps() -> bool:
-    """Windows Settings > Default apps, on LGallery's page when Windows 11 supports it."""
-    return QDesktopServices.openUrl(QUrl("ms-settings:defaultapps?registeredAppUser=LGallery"))
+    """Windows Settings > Default apps, on One Gallery's page when Windows 11 supports it."""
+    return QDesktopServices.openUrl(QUrl("ms-settings:defaultapps?registeredAppUser=OneGallery"))
 
 
 def launch_desktop_app(desktop_file: str, paths: list[str]) -> bool:
@@ -245,7 +245,7 @@ def launch_desktop_app(desktop_file: str, paths: list[str]) -> bool:
 
 
 # ---- default image viewer ------------------------------------------------------------------
-DESKTOP_ID = "lgallery.desktop"
+DESKTOP_ID = "onegallery.desktop"
 VIEWER_MIMES = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/bmp", "image/tiff"]
 HEIF_MIMES = ["image/heic", "image/heif"]
 
@@ -270,7 +270,7 @@ def desktop_file_installed() -> bool:
 
 
 def default_viewer_status(mimes: list[str]) -> str:
-    """"default" | "partial" | "other" | "not-installed" (no lgallery.desktop to point at),
+    """"default" | "partial" | "other" | "not-installed" (no onegallery.desktop to point at),
     or "windows" (Windows decides in Settings > Default apps)."""
     if IS_WINDOWS:
         return "windows"
@@ -306,7 +306,7 @@ def set_default_viewer(mimes: list[str]) -> None:
                 parser.set("Added Associations", mime, ";".join([DESKTOP_ID] + added) + ";")
         path = _mimeapps_path()
         os.makedirs(os.path.dirname(path), exist_ok=True)
-        tmp = path + ".lgallery-tmp"
+        tmp = path + ".onegallery-tmp"
         with open(tmp, "w", encoding="utf-8") as f:
             parser.write(f, space_around_delimiters=False)
         os.replace(tmp, path)

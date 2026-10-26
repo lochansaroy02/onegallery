@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from datetime import date
 
-os.environ.setdefault("LGALLERY_HOME", os.path.join(tempfile.mkdtemp(prefix="lgallery-group-test-"), "home"))
+os.environ.setdefault("ONEGALLERY_HOME", os.path.join(tempfile.mkdtemp(prefix="onegallery-group-test-"), "home"))
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 

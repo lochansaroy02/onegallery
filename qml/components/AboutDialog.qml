@@ -29,7 +29,7 @@ Popup {
         }
         Text {
             anchors.horizontalCenter: parent.horizontalCenter
-            text: qsTr("Gallery")
+            text: qsTr("One Gallery")
             color: Theme.text
             font.pixelSize: Theme.fontTitle + 4
             font.weight: Font.Bold
@@ -44,7 +44,7 @@ Popup {
             width: parent.width
             horizontalAlignment: Text.AlignHCenter
             wrapMode: Text.Wrap
-            text: qsTr("A One UI style photo gallery for KDE Plasma. Your pictures stay where they are; Gallery only indexes the folders you choose.")
+            text: qsTr("A One UI style photo gallery for KDE Plasma. Your pictures stay where they are; One Gallery only indexes the folders you choose.")
             color: Theme.text
             font.pixelSize: Theme.fontBody
         }

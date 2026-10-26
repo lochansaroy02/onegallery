@@ -4,7 +4,7 @@ Edits are a small dict of parameters (geometry, light/colour adjustments, a filt
 preset). The preview is rendered from a downscaled copy on a worker thread; saving
 re-applies the same parameters to the full-resolution image. Before a file is
 overwritten for the first time its untouched original is copied to
-~/.local/share/lgallery/originals/ so "Revert to original" can restore it later.
+~/.local/share/onegallery/originals/ so "Revert to original" can restore it later.
 """
 
 import copy
@@ -287,7 +287,7 @@ def write_image(im: Image.Image, dest: str, exif: Image.Exif, info: dict, taken:
         kwargs["exif"] = _exif_bytes(exif, taken, im.size)
 
     folder, name = os.path.split(dest)
-    tmp = os.path.join(folder, f".{name}.lgallery-tmp{ext}")
+    tmp = os.path.join(folder, f".{name}.onegallery-tmp{ext}")
     try:
         try:
             im.save(tmp, fmt, **kwargs)

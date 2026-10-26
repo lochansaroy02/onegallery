@@ -1,6 +1,6 @@
 """Encrypted storage for the private album.
 
-Layout (in ~/.local/share/lgallery/private/, folder mode 0700):
+Layout (in ~/.local/share/onegallery/private/, folder mode 0700):
 
     vault.json       KDF parameters + the album key wrapped (encrypted) with the password
     manifest.bin     encrypted JSON: one entry per item (name, original path, date, size, ...)
@@ -41,6 +41,8 @@ MAGIC = b"LGV1"
 CHUNK = 1 << 20
 TAG = 16
 KDF = {"n": 2 ** 15, "r": 8, "p": 1}
+# These keep the app's old name (LGallery) on purpose: they are part of the encryption, and
+# changing them would make existing private albums unreadable.
 KEY_AAD = b"lgallery-private-album-key"
 MANIFEST_AAD = b"lgallery-private-album-manifest"
 
@@ -127,7 +129,7 @@ class Vault:
         except (OSError, ValueError) as exc:
             raise VaultError(f"The private album's key file is damaged: {exc}") from exc
         if meta.get("version") != VERSION or meta.get("kdf") != "scrypt":
-            raise VaultError("This private album was made by a newer LGallery")
+            raise VaultError("This private album was made by a newer One Gallery")
         kek = _kek(password, _unb64(meta["salt"]), meta["n"], meta["r"], meta["p"])
         try:
             return AESGCM(kek).decrypt(_unb64(meta["nonce"]), _unb64(meta["key"]), KEY_AAD)

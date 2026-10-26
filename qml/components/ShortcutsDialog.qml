@@ -20,7 +20,7 @@ Popup {
     background: Rectangle { radius: Theme.radiusL; color: Theme.surface }
 
     readonly property var groups: [
-        { title: qsTr("Gallery"), keys: [
+        { title: qsTr("One Gallery"), keys: [
             ["Ctrl+O", qsTr("Add folder")], ["Ctrl+Shift+O", qsTr("Open picture")],
             ["Ctrl+F", qsTr("Search")], ["F5", qsTr("Rescan folders")],
             ["Ctrl+1 / 2 / 3 / 4 / 5", qsTr("Pictures / Videos / Albums / Collections / Folders")],

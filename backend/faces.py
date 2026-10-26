@@ -73,7 +73,7 @@ def download_models(progress=None) -> None:
             continue
         digest = hashlib.sha256()
         tmp = dest.with_suffix(".part")
-        req = urllib.request.Request(url, headers={"User-Agent": "LGallery"})
+        req = urllib.request.Request(url, headers={"User-Agent": "OneGallery"})
         with urllib.request.urlopen(req, timeout=60) as resp, open(tmp, "wb") as out:
             while True:
                 chunk = resp.read(256 * 1024)

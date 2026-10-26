@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
-# Update LGallery: pull the latest commits and refresh the installed app.
+# Update One Gallery: pull the latest commits and refresh the installed app.
 #
 #   ./update.sh              pull + update whatever is installed (user install or Arch package)
 #   ./update.sh --no-pull    only refresh the installed app from the current checkout
 #   ./update.sh --install    also install the launcher if nothing is installed yet
-#   ./update.sh --restart    restart Gallery afterwards if it is running
+#   ./update.sh --restart    restart One Gallery afterwards if it is running
 #
 # On Arch/Manjaro it installs the needed system packages (pacman's pyside6, ...) and runs
-# Gallery on the system Qt, which the KDE global menu needs.
+# One Gallery on the system Qt, which the KDE global menu needs.
 #
 # Your settings, library index, favorites and saved originals live outside this folder
-# (~/.config/lgallery, ~/.local/share/lgallery) and are never touched by an update.
+# (~/.config/onegallery, ~/.local/share/onegallery) and are never touched by an update.
 set -euo pipefail
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -60,10 +60,18 @@ fi
 
 # ---- 2. what is installed? ------------------------------------------------------------------
 data="${XDG_DATA_HOME:-$HOME/.local/share}"
-user_launcher="$HOME/.local/bin/lgallery"
+user_launcher="$HOME/.local/bin/onegallery"
+# the app used to be called LGallery: an install under the old name is updated (and renamed) too
+old_package=""
+if [[ ! -f "$user_launcher" && -f "$HOME/.local/bin/lgallery" ]]; then
+    user_launcher="$HOME/.local/bin/lgallery"
+fi
 mode=none
-if command -v pacman >/dev/null 2>&1 && pacman -Q lgallery >/dev/null 2>&1; then
+if command -v pacman >/dev/null 2>&1 && pacman -Q onegallery >/dev/null 2>&1; then
     mode=package
+elif command -v pacman >/dev/null 2>&1 && pacman -Q lgallery >/dev/null 2>&1; then
+    mode=package
+    old_package=lgallery
 elif [[ -f "$user_launcher" ]] && grep -q "$here/main.py" "$user_launcher" 2>/dev/null; then
     mode=user
 elif [[ -f "$user_launcher" ]]; then
@@ -71,7 +79,7 @@ elif [[ -f "$user_launcher" ]]; then
 fi
 
 # ---- 3. python environment (source / user installs) -----------------------------------------
-# On Arch/Manjaro Gallery runs on the system Qt (pacman's pyside6): that is what makes the
+# On Arch/Manjaro One Gallery runs on the system Qt (pacman's pyside6): that is what makes the
 # KDE global menu, native KDE dialogs and theme work. Elsewhere it uses pip's PySide6.
 REQUIRED_PKGS=(python pyside6 python-pillow python-cryptography qt6-declarative qt6-svg qt6-imageformats
                qt6-multimedia qt6-multimedia-ffmpeg ffmpeg)
@@ -167,8 +175,14 @@ case "$mode" in
     package)
         bold "Rebuilding the Arch package (you may be asked for your password)"
         check_imports /usr/bin/python3
+        if [[ -n "$old_package" ]]; then
+            # pacman won't swap conflicting packages with --noconfirm, so remove the old one
+            # first (your library and settings are kept and moved over on the next start)
+            info "Replacing the old '$old_package' package with 'onegallery'"
+            sudo pacman -R --noconfirm "$old_package"
+        fi
         ( cd "$here/packaging" && makepkg -sif --noconfirm -c )
-        rm -f "$here"/packaging/lgallery-*.pkg.tar.*
+        rm -f "$here"/packaging/onegallery-*.pkg.tar.*
         ;;
     user)
         ensure_venv
@@ -192,7 +206,7 @@ case "$mode" in
             bold "Installing the launcher"
             "$here/packaging/install-user.sh"
         else
-            bold "Gallery is not installed as an app"
+            bold "One Gallery is not installed as an app"
             info "Run it with: $here/.venv/bin/python $here/main.py"
             info "Or install it into the app launcher: ./update.sh --install"
         fi
@@ -201,21 +215,21 @@ esac
 
 # ---- 5. running instance ----------------------------------------------------------------------
 escape() { printf '%s' "$1" | sed 's/[][\.*^$()+?{}|]/\\&/g'; }
-pids="$(pgrep -f -- "$(escape "$here/main.py")|/usr/share/lgallery/main\.py" 2>/dev/null || true)"
+pids="$(pgrep -f -- "$(escape "$here/main.py")|/usr/share/(one|l)gallery/main\.py" 2>/dev/null || true)"
 if [[ -n "$pids" ]]; then
     if [[ $restart -eq 1 ]]; then
-        bold "Restarting Gallery"
+        bold "Restarting One Gallery"
         kill $pids 2>/dev/null || true
         for _ in 1 2 3 4 5 6 7 8 9 10; do
             kill -0 $pids 2>/dev/null || break
             sleep 0.3
         done
-        if [[ $mode == package ]]; then launcher=/usr/bin/lgallery; else launcher="$user_launcher"; fi
+        if [[ $mode == package ]]; then launcher=/usr/bin/onegallery; else launcher="$HOME/.local/bin/onegallery"; fi
         [[ -x "$launcher" ]] || launcher="$here/.venv/bin/python $here/main.py"
         nohup $launcher >/dev/null 2>&1 &
-        info "Gallery restarted."
+        info "One Gallery restarted."
     else
-        bold "Gallery is running"
+        bold "One Gallery is running"
         info "Close and reopen it to use the new version (or run: ./update.sh --no-pull --restart)."
     fi
 fi

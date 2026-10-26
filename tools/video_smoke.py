@@ -2,7 +2,7 @@
 """Drive the video features: indexing next to photos, the Videos tab, the muted inline
 preview in the viewer and the built-in player. Needs ffmpeg to generate the test clips.
 
-    QT_QPA_PLATFORM=offscreen python tools/video_smoke.py --out /tmp/lgallery-video-shots
+    QT_QPA_PLATFORM=offscreen python tools/video_smoke.py --out /tmp/onegallery-video-shots
 """
 import argparse
 import os
@@ -21,8 +21,8 @@ args = parser.parse_args()
 if not shutil.which("ffmpeg"):
     sys.exit("ffmpeg is needed to generate test videos")
 
-tmp = Path(tempfile.mkdtemp(prefix="lgallery-video-"))
-os.environ["LGALLERY_HOME"] = str(tmp / "home")
+tmp = Path(tempfile.mkdtemp(prefix="onegallery-video-"))
+os.environ["ONEGALLERY_HOME"] = str(tmp / "home")
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from PIL import Image  # noqa: E402

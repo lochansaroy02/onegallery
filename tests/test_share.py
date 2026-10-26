@@ -20,14 +20,14 @@ FIXTURES = os.path.join(HERE, "fixtures")
 class ShareHelperTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.tmp = tempfile.mkdtemp(prefix="lgallery-share-test-")
+        cls.tmp = tempfile.mkdtemp(prefix="onegallery-share-test-")
         runtime = os.path.join(cls.tmp, "qml")
         with open(runtime, "w") as f:
             f.write(f"#!/bin/sh\nexec '{sys.executable}' '{os.path.join(FIXTURES, 'fake_qml.py')}' \"$@\"\n")
         os.chmod(runtime, os.stat(runtime).st_mode | stat.S_IEXEC)
-        cls.saved = {k: os.environ.get(k) for k in ("LGALLERY_QML", "LGALLERY_QML_IMPORT_PATH")}
-        os.environ["LGALLERY_QML"] = runtime
-        os.environ["LGALLERY_QML_IMPORT_PATH"] = os.path.join(FIXTURES, "mock_purpose")
+        cls.saved = {k: os.environ.get(k) for k in ("ONEGALLERY_QML", "ONEGALLERY_QML_IMPORT_PATH")}
+        os.environ["ONEGALLERY_QML"] = runtime
+        os.environ["ONEGALLERY_QML_IMPORT_PATH"] = os.path.join(FIXTURES, "mock_purpose")
         cls.files = []
         for name in ("a.jpg", "b.jpg"):
             path = os.path.join(cls.tmp, name)

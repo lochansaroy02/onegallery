@@ -588,7 +588,7 @@ class Gallery(QObject):
     @Property(bool, constant=True)
     def globalMenuAvailable(self):
         """True when a global menu (KDE Global Menu widget) is listening on D-Bus."""
-        if sys.platform != "linux" or os.environ.get("LGALLERY_NO_GLOBAL_MENU"):
+        if sys.platform != "linux" or os.environ.get("ONEGALLERY_NO_GLOBAL_MENU"):
             return False
         try:
             from PySide6.QtDBus import QDBusConnection
@@ -794,10 +794,10 @@ class Gallery(QObject):
     def setAsDefaultViewer(self):
         if IS_WINDOWS:  # Windows lets only the user choose: open Settings > Default apps
             if not actions.windows_default_apps():
-                self.toast.emit("Open Settings > Apps > Default apps and choose LGallery")
+                self.toast.emit("Open Settings > Apps > Default apps and choose One Gallery")
             return
         def done(_):
-            self.toast.emit("Gallery is now your default image viewer")
+            self.toast.emit("One Gallery is now your default image viewer")
             self.refreshDefaultViewer()
 
         def failed(exc):

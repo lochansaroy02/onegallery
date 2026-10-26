@@ -2,7 +2,7 @@
 """Drive the private album like a user: set a password, move pictures and a video in,
 lock, unlock (wrong, then right password), view, move out, delete, lock again.
 
-    QT_QPA_PLATFORM=offscreen python tools/private_smoke.py --out /tmp/lgallery-private-shots
+    QT_QPA_PLATFORM=offscreen python tools/private_smoke.py --out /tmp/onegallery-private-shots
 """
 import argparse
 import os
@@ -18,8 +18,8 @@ parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
 parser.add_argument("--out", default="private-shots")
 args = parser.parse_args()
 
-tmp = Path(tempfile.mkdtemp(prefix="lgallery-psmoke-"))
-os.environ["LGALLERY_HOME"] = str(tmp / "home")
+tmp = Path(tempfile.mkdtemp(prefix="onegallery-psmoke-"))
+os.environ["ONEGALLERY_HOME"] = str(tmp / "home")
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from PIL import Image  # noqa: E402

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render packaging/icon.svg into packaging/windows/lgallery.ico (16-256 px).
+"""Render packaging/icon.svg into packaging/windows/onegallery.ico (16-256 px).
 
     python packaging/windows/make_icon.py
 """
@@ -14,7 +14,7 @@ from PySide6.QtSvg import QSvgRenderer
 
 HERE = Path(__file__).resolve().parent
 SVG = HERE.parent / "icon.svg"
-OUT = HERE / "lgallery.ico"
+OUT = HERE / "onegallery.ico"
 SIZES = [16, 20, 24, 32, 40, 48, 64, 96, 128, 256]
 
 

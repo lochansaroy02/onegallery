@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Check "Open with Gallery": start with a file, browse its folder, hand-off to a running window.
 
-    python tools/open_with_smoke.py samples --out /tmp/lgallery-openwith-shots
+    python tools/open_with_smoke.py samples --out /tmp/onegallery-openwith-shots
 """
 
 import argparse
@@ -18,8 +18,8 @@ parser.add_argument("samples")
 parser.add_argument("--out", default="openwith-shots")
 args = parser.parse_args()
 
-tmp = Path(tempfile.mkdtemp(prefix="lgallery-openwith-"))
-os.environ["LGALLERY_HOME"] = str(tmp / "home")
+tmp = Path(tempfile.mkdtemp(prefix="onegallery-openwith-"))
+os.environ["ONEGALLERY_HOME"] = str(tmp / "home")
 here = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(here))
 

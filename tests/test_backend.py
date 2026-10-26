@@ -7,8 +7,8 @@ import tempfile
 import time
 import unittest
 
-TMP = tempfile.mkdtemp(prefix="lgallery-test-")
-os.environ["LGALLERY_HOME"] = os.path.join(TMP, "home")
+TMP = tempfile.mkdtemp(prefix="onegallery-test-")
+os.environ["ONEGALLERY_HOME"] = os.path.join(TMP, "home")
 os.environ["XDG_DATA_HOME"] = os.path.join(TMP, "xdg-data")
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))

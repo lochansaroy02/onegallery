@@ -1,9 +1,9 @@
-# PyInstaller spec for the Windows build of LGallery (used by packaging/windows/build.ps1).
+# PyInstaller spec for the Windows build of One Gallery (used by packaging/windows/build.ps1).
 #
-#   pyinstaller packaging/windows/lgallery.spec --noconfirm --distpath dist --workpath build/pyinstaller
+#   pyinstaller packaging/windows/onegallery.spec --noconfirm --distpath dist --workpath build/pyinstaller
 #
-# Produces dist/LGallery/LGallery.exe plus its _internal folder (Python, Qt, QML, ffmpeg).
-# Inno Setup (lgallery.iss) then packs that folder into the installer.
+# Produces dist/OneGallery/OneGallery.exe plus its _internal folder (Python, Qt, QML, ffmpeg).
+# Inno Setup (onegallery.iss) then packs that folder into the installer.
 import os
 import re
 from pathlib import Path
@@ -11,7 +11,7 @@ from pathlib import Path
 ROOT = Path(SPECPATH).resolve().parent.parent          # noqa: F821 (SPECPATH: set by PyInstaller)
 WIN = ROOT / "packaging" / "windows"
 VERSION = re.search(r'__version__ = "([^"]+)"', (ROOT / "backend" / "__init__.py").read_text()).group(1)
-FFMPEG_DIR = Path(os.environ.get("LGALLERY_FFMPEG_DIR", ROOT / "build" / "ffmpeg"))
+FFMPEG_DIR = Path(os.environ.get("ONEGALLERY_FFMPEG_DIR", ROOT / "build" / "ffmpeg"))
 
 datas = [
     (str(ROOT / "qml"), "qml"),
@@ -33,7 +33,7 @@ hiddenimports = [
     "cryptography.hazmat.primitives.ciphers.aead",
     "send2trash", "watchdog.observers", "pillow_heif",
 ]
-# big Qt parts LGallery never uses
+# big Qt parts One Gallery never uses
 UNUSED = [
     "WebEngine", "WebView", "WebChannel", "WebSockets", "Pdf", "Quick3D", "Qt3D", "3DCore", "3DRender",
     "3DInput", "3DLogic", "3DExtras", "3DAnimation", "Charts", "DataVisualization", "Graphs",
@@ -51,7 +51,7 @@ def unused(dest: str) -> bool:
         if (f"Qt6{name}" in d or f"/Qt{name}/" in d or d.endswith(f"/Qt{name}") or f"qml/Qt{name}" in d
                 or f"Qt{name}.framework" in d or d.startswith(f"Qt{name}")):
             return True
-    # Quick Controls styles: LGallery uses Basic (and Dialogs fall back to it)
+    # Quick Controls styles: One Gallery uses Basic (and Dialogs fall back to it)
     return any(f"Controls/{style}" in d for style in ("Material", "Universal", "Imagine"))
 
 
@@ -76,13 +76,13 @@ version_file.write_text(f"""VSVersionInfo(
   ffi=FixedFileInfo(filevers=({nums}), prodvers=({nums})),
   kids=[
     StringFileInfo([StringTable('040904B0', [
-      StringStruct('CompanyName', 'LGallery'),
-      StringStruct('FileDescription', 'LGallery photo and video gallery'),
+      StringStruct('CompanyName', 'One Gallery'),
+      StringStruct('FileDescription', 'One Gallery photo and video gallery'),
       StringStruct('FileVersion', '{VERSION}'),
-      StringStruct('InternalName', 'LGallery'),
+      StringStruct('InternalName', 'OneGallery'),
       StringStruct('LegalCopyright', 'MIT License'),
-      StringStruct('OriginalFilename', 'LGallery.exe'),
-      StringStruct('ProductName', 'LGallery'),
+      StringStruct('OriginalFilename', 'OneGallery.exe'),
+      StringStruct('ProductName', 'One Gallery'),
       StringStruct('ProductVersion', '{VERSION}')])]),
     VarFileInfo([VarStruct('Translation', [1033, 1200])])
   ]
@@ -95,8 +95,8 @@ exe = EXE(  # noqa: F821
     a.scripts,
     [],
     exclude_binaries=True,
-    name="LGallery",
-    icon=str(WIN / "lgallery.ico"),
+    name="OneGallery",
+    icon=str(WIN / "onegallery.ico"),
     version=str(version_file),
     console=False,
     upx=False,
@@ -105,6 +105,6 @@ coll = COLLECT(  # noqa: F821
     exe,
     a.binaries,
     a.datas,
-    name="LGallery",
+    name="OneGallery",
     upx=False,
 )

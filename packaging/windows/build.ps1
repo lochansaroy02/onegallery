@@ -1,7 +1,7 @@
 <#
 .SYNOPSIS
-    Build LGallery for Windows: dist\LGallery\LGallery.exe and the installer
-    dist\LGallery-<version>-setup.exe.
+    Build One Gallery for Windows: dist\OneGallery\OneGallery.exe and the installer
+    dist\OneGallery-<version>-setup.exe.
 
 .DESCRIPTION
     Run from any folder on Windows 10/11 (PowerShell 5.1 or 7):
@@ -11,7 +11,7 @@
     Needs Python 3.11-3.13 (python.org or "winget install Python.Python.3.13") and Inno Setup 6
     ("winget install JRSoftware.InnoSetup"). It creates build\venv, installs the Python
     packages, downloads ffmpeg (LGPL build) for video thumbnails, runs the unit tests,
-    builds with PyInstaller, checks the packaged app with LGallery.exe --self-test and
+    builds with PyInstaller, checks the packaged app with OneGallery.exe --self-test and
     packs the installer with Inno Setup.
 
 .PARAMETER NoFaces
@@ -24,7 +24,7 @@
     Skip the unit tests.
 
 .PARAMETER NoInstaller
-    Stop after PyInstaller (dist\LGallery\LGallery.exe), without building the installer.
+    Stop after PyInstaller (dist\OneGallery\OneGallery.exe), without building the installer.
 #>
 param(
     [switch]$NoFaces,
@@ -44,7 +44,7 @@ function Run($exe) {
 }
 
 $version = (Select-String -Path backend\__init__.py -Pattern '__version__ = "([^"]+)"').Matches[0].Groups[1].Value
-Write-Host "LGallery $version" -ForegroundColor Green
+Write-Host "One Gallery $version" -ForegroundColor Green
 
 # ---- 1. Python environment -----------------------------------------------------------------
 Step "Python environment (build\venv)"
@@ -64,10 +64,10 @@ if (-not $NoFfmpeg) {
     $ff = Join-Path $root "build\ffmpeg"
     if (-not (Test-Path "$ff\ffmpeg.exe")) {
         New-Item -ItemType Directory -Force -Path $ff | Out-Null
-        $zip = Join-Path $env:TEMP "lgallery-ffmpeg.zip"
+        $zip = Join-Path $env:TEMP "onegallery-ffmpeg.zip"
         $url = "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-lgpl.zip"
         Invoke-WebRequest -Uri $url -OutFile $zip
-        $unpacked = Join-Path $env:TEMP "lgallery-ffmpeg"
+        $unpacked = Join-Path $env:TEMP "onegallery-ffmpeg"
         if (Test-Path $unpacked) { Remove-Item -Recurse -Force $unpacked }
         Expand-Archive -Path $zip -DestinationPath $unpacked
         $bin = Get-ChildItem -Path $unpacked -Recurse -Filter ffmpeg.exe | Select-Object -First 1
@@ -76,28 +76,28 @@ if (-not $NoFfmpeg) {
         if ($license) { Copy-Item $license.FullName "$ff\LICENSE.txt" }
         Remove-Item -Recurse -Force $unpacked, $zip
     }
-    $env:LGALLERY_FFMPEG_DIR = $ff
+    $env:ONEGALLERY_FFMPEG_DIR = $ff
 } else {
-    $env:LGALLERY_FFMPEG_DIR = Join-Path $root "build\no-ffmpeg"
+    $env:ONEGALLERY_FFMPEG_DIR = Join-Path $root "build\no-ffmpeg"
 }
 
 # ---- 3. tests --------------------------------------------------------------------------------
 if (-not $SkipTests) {
     Step "Unit tests"
     $env:QT_QPA_PLATFORM = "offscreen"
-    if (-not $NoFfmpeg) { $env:PATH = "$env:LGALLERY_FFMPEG_DIR;$env:PATH" }
+    if (-not $NoFfmpeg) { $env:PATH = "$env:ONEGALLERY_FFMPEG_DIR;$env:PATH" }
     Run $py -m unittest discover -s tests
     Remove-Item Env:QT_QPA_PLATFORM
 }
 
 # ---- 4. PyInstaller -----------------------------------------------------------------------------
-Step "PyInstaller (dist\LGallery)"
-if (Test-Path dist\LGallery) { Remove-Item -Recurse -Force dist\LGallery }
-Run $py -m PyInstaller packaging\windows\lgallery.spec --noconfirm --distpath dist --workpath build\pyinstaller
+Step "PyInstaller (dist\OneGallery)"
+if (Test-Path dist\OneGallery) { Remove-Item -Recurse -Force dist\OneGallery }
+Run $py -m PyInstaller packaging\windows\onegallery.spec --noconfirm --distpath dist --workpath build\pyinstaller
 
-Step "Checking the packaged app (LGallery.exe --self-test)"
+Step "Checking the packaged app (OneGallery.exe --self-test)"
 $report = Join-Path $root "build\self-test.txt"
-$proc = Start-Process -FilePath dist\LGallery\LGallery.exe -ArgumentList "--self-test", "`"$report`"" -Wait -PassThru
+$proc = Start-Process -FilePath dist\OneGallery\OneGallery.exe -ArgumentList "--self-test", "`"$report`"" -Wait -PassThru
 Get-Content $report | ForEach-Object { Write-Host "    $_" }
 if ($proc.ExitCode -ne 0) {
     if ($NoFfmpeg -and ((Get-Content $report) -match "FAIL ffmpeg") -and -not ((Get-Content $report) -match "FAIL (?!ffmpeg)")) {
@@ -106,7 +106,7 @@ if ($proc.ExitCode -ne 0) {
         throw "the packaged app failed its self-test (see above)"
     }
 }
-if ($NoInstaller) { Write-Host "`nDone: dist\LGallery\LGallery.exe" -ForegroundColor Green; exit 0 }
+if ($NoInstaller) { Write-Host "`nDone: dist\OneGallery\OneGallery.exe" -ForegroundColor Green; exit 0 }
 
 # ---- 5. installer (Inno Setup) -------------------------------------------------------------------
 Step "Installer (Inno Setup)"
@@ -117,8 +117,8 @@ $iscc = @(
     "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe"
 ) | Where-Object { $_ -and (Test-Path $_) } | Select-Object -First 1
 if (-not $iscc) { throw "Inno Setup 6 not found. Install it: winget install JRSoftware.InnoSetup" }
-Run $iscc "/Qp" "/DAppVersion=$version" packaging\windows\lgallery.iss
+Run $iscc "/Qp" "/DAppVersion=$version" packaging\windows\onegallery.iss
 
-$setup = "dist\LGallery-$version-setup.exe"
+$setup = "dist\OneGallery-$version-setup.exe"
 $size = "{0:N0} MB" -f ((Get-Item $setup).Length / 1MB)
 Write-Host "`nDone: $setup ($size)" -ForegroundColor Green

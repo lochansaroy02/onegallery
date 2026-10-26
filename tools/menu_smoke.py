@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Check the application menu (global menu + ⋮ menu): every action works in context.
 
-    python tools/menu_smoke.py samples --out /tmp/lgallery-menu-shots
+    python tools/menu_smoke.py samples --out /tmp/onegallery-menu-shots
 """
 import argparse, os, sys, time, tempfile, shutil
 from pathlib import Path
@@ -11,7 +11,7 @@ parser.add_argument("--out", default="menu-shots")
 args = parser.parse_args()
 REPO = str(Path(__file__).resolve().parent.parent)
 OUT = Path(args.out); OUT.mkdir(parents=True, exist_ok=True)
-tmp = Path(tempfile.mkdtemp()); os.environ["LGALLERY_HOME"] = str(tmp / "home")
+tmp = Path(tempfile.mkdtemp()); os.environ["ONEGALLERY_HOME"] = str(tmp / "home")
 sys.path.insert(0, REPO)
 from PySide6.QtCore import QCoreApplication, QEventLoop
 from PySide6.QtQml import QQmlEngine, QQmlExpression
@@ -100,7 +100,7 @@ trig("Help", "Keyboard Shortcuts"); pump(500)
 root.grabWindow().save(str(OUT) + "/m1-shortcuts.png")
 check("Keyboard Shortcuts dialog", js("shortcutsDialog.opened") is True)
 js("shortcutsDialog.close()"); pump(300)
-trig("Help", "About Gallery"); pump(500)
+trig("Help", "About One Gallery"); pump(500)
 root.grabWindow().save(str(OUT) + "/m2-about.png")
 js("aboutDialog.close()"); pump(300)
 # open recent

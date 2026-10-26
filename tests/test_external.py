@@ -6,8 +6,8 @@ import sys
 import tempfile
 import unittest
 
-TMP = tempfile.mkdtemp(prefix="lgallery-ext-test-")
-os.environ.setdefault("LGALLERY_HOME", os.path.join(TMP, "home"))
+TMP = tempfile.mkdtemp(prefix="onegallery-ext-test-")
+os.environ.setdefault("ONEGALLERY_HOME", os.path.join(TMP, "home"))
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -92,8 +92,8 @@ class DefaultViewerTests(unittest.TestCase):
             actions.set_default_viewer(["image/png"])
 
     def test_set_default(self):
-        with open(os.path.join(self.data, "applications", "lgallery.desktop"), "w") as f:
-            f.write("[Desktop Entry]\nType=Application\nName=Gallery\nExec=lgallery %F\n")
+        with open(os.path.join(self.data, "applications", "onegallery.desktop"), "w") as f:
+            f.write("[Desktop Entry]\nType=Application\nName=Gallery\nExec=onegallery %F\n")
         mimes = ["image/jpeg", "image/png"]
         self.assertEqual(actions.default_viewer_status(mimes), "other")
         actions.set_default_viewer(mimes)
@@ -101,7 +101,7 @@ class DefaultViewerTests(unittest.TestCase):
         with open(os.path.join(self.config, "mimeapps.list")) as f:
             text = f.read()
         self.assertIn("text/plain=kate.desktop;", text)      # other associations untouched
-        self.assertIn("image/png=lgallery.desktop;", text)
+        self.assertIn("image/png=onegallery.desktop;", text)
 
 
 if __name__ == "__main__":

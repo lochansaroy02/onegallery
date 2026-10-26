@@ -456,7 +456,7 @@ QtObject {
                 onTriggered: prefs.liveUpdates = !prefs.liveUpdates
             }
             MenuSpec {
-                text: gallery.defaultViewer === "default" ? qsTr("Gallery Is the Default Image Viewer") : qsTr("Set as Default Image Viewer")
+                text: gallery.defaultViewer === "default" ? qsTr("One Gallery Is the Default Image Viewer") : qsTr("Set as Default Image Viewer")
                 enabled: gallery.defaultViewer === "other" || gallery.defaultViewer === "partial"
                 onTriggered: gallery.setAsDefaultViewer()
             }
@@ -475,7 +475,7 @@ QtObject {
             MenuSpec { text: qsTr("Project Page"); onTriggered: Qt.openUrlExternally(gallery.projectUrl) }
             MenuSpec { text: qsTr("Report a Problem"); onTriggered: Qt.openUrlExternally(gallery.projectUrl + "/issues") }
             MenuSpec { separator: true }
-            MenuSpec { text: qsTr("About Gallery"); onTriggered: win.showAbout() }
+            MenuSpec { text: qsTr("About One Gallery"); onTriggered: win.showAbout() }
         }
     ]
 }

@@ -268,14 +268,14 @@ Item {
                 SettingRow {
                     title: qsTr("Default image viewer")
                     subtitle: gallery.defaultViewer === "windows"
-                              ? qsTr("Choose LGallery for your picture types in Windows Settings › Default apps")
+                              ? qsTr("Choose One Gallery for your picture types in Windows Settings › Default apps")
                               : gallery.defaultViewer === "default"
-                              ? qsTr("Pictures you open in Dolphin or any file manager open in Gallery")
+                              ? qsTr("Pictures you open in Dolphin or any file manager open in One Gallery")
                               : gallery.defaultViewer === "not-installed"
                               ? qsTr("Install the launcher first (packaging/install-user.sh or the Arch package)")
                               : gallery.defaultViewer === "partial"
-                              ? qsTr("Gallery opens some picture types. Set it for all of them?")
-                              : qsTr("Open pictures from Dolphin in Gallery. Their folders are not added to the library.")
+                              ? qsTr("One Gallery opens some picture types. Set it for all of them?")
+                              : qsTr("Open pictures from Dolphin in One Gallery. Their folders are not added to the library.")
                     PillButton {
                         compact: true
                         kind: gallery.defaultViewer === "default" ? "tonal" : "filled"

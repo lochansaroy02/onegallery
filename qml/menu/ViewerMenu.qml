@@ -45,7 +45,7 @@ StyledMenu {
     }
 
     AppMenuItem {
-        text: qsTr("Open Gallery")
+        text: qsTr("Open One Gallery")
         iconName: "pictures"
         visible: menu.win !== null && menu.win.standalone
         onTriggered: menu.win.showLibrary()

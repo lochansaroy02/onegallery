@@ -9,8 +9,8 @@ import tempfile
 import unittest
 from unittest import mock
 
-TMP = tempfile.mkdtemp(prefix="lgallery-desktop-test-")
-os.environ.setdefault("LGALLERY_HOME", os.path.join(TMP, "home"))
+TMP = tempfile.mkdtemp(prefix="onegallery-desktop-test-")
+os.environ.setdefault("ONEGALLERY_HOME", os.path.join(TMP, "home"))
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 

@@ -1,12 +1,12 @@
 # Maintainer: Your Name <you at example dot com>
 # Builds a package from this source tree:  cd packaging && makepkg -si
 # (the AUR packages are in packaging/aur/)
-pkgname=lgallery
+pkgname=onegallery
 pkgver=0.3.0
 pkgrel=1
 pkgdesc="One UI style photo and video gallery for KDE Plasma"
 arch=('any')
-url="https://github.com/lochansaroy02/lgallery"
+url="https://github.com/lochansaroy02/onegallery"
 license=('MIT')
 depends=('python' 'pyside6' 'python-pillow' 'python-cryptography' 'qt6-declarative' 'qt6-svg' 'qt6-imageformats'
          'qt6-multimedia' 'qt6-multimedia-ffmpeg' 'ffmpeg')
@@ -18,23 +18,26 @@ optdepends=('python-watchdog: live updates when files change'
             'plasma-integration: KDE global menu, native dialogs and theme'
             'dolphin: "Show in folder" selects the file'
             'xdg-utils: open files with other applications')
+# the app used to be called LGallery
+conflicts=('lgallery' 'lgallery-git')
+replaces=('lgallery')
 source=()
 sha256sums=()
 
 package() {
     cd "$startdir/.."
-    install -dm755 "$pkgdir/usr/share/lgallery"
-    cp -r main.py backend qml "$pkgdir/usr/share/lgallery/"
-    find "$pkgdir/usr/share/lgallery" -name '__pycache__' -prune -exec rm -rf {} +
-    python -m compileall -q -o 0 -o 1 -s "$pkgdir" -p / "$pkgdir/usr/share/lgallery"
+    install -dm755 "$pkgdir/usr/share/onegallery"
+    cp -r main.py backend qml "$pkgdir/usr/share/onegallery/"
+    find "$pkgdir/usr/share/onegallery" -name '__pycache__' -prune -exec rm -rf {} +
+    python -m compileall -q -o 0 -o 1 -s "$pkgdir" -p / "$pkgdir/usr/share/onegallery"
 
-    install -Dm644 packaging/icon.svg "$pkgdir/usr/share/lgallery/packaging/icon.svg"
-    install -Dm644 packaging/icon.svg "$pkgdir/usr/share/icons/hicolor/scalable/apps/lgallery.svg"
-    install -Dm644 packaging/lgallery.desktop "$pkgdir/usr/share/applications/lgallery.desktop"
+    install -Dm644 packaging/icon.svg "$pkgdir/usr/share/onegallery/packaging/icon.svg"
+    install -Dm644 packaging/icon.svg "$pkgdir/usr/share/icons/hicolor/scalable/apps/onegallery.svg"
+    install -Dm644 packaging/onegallery.desktop "$pkgdir/usr/share/applications/onegallery.desktop"
     install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
     install -Dm644 README.md "$pkgdir/usr/share/doc/$pkgname/README.md"
 
     install -dm755 "$pkgdir/usr/bin"
-    printf '#!/bin/sh\nexec /usr/bin/python3 /usr/share/lgallery/main.py "$@"\n' > "$pkgdir/usr/bin/lgallery"
-    chmod 755 "$pkgdir/usr/bin/lgallery"
+    printf '#!/bin/sh\nexec /usr/bin/python3 /usr/share/onegallery/main.py "$@"\n' > "$pkgdir/usr/bin/onegallery"
+    chmod 755 "$pkgdir/usr/bin/onegallery"
 }

@@ -33,7 +33,7 @@ CLIPBOARD_IDS = ("clipboardplugin", "clipboard")
 
 
 def qml_runtime() -> str | None:
-    override = os.environ.get("LGALLERY_QML")
+    override = os.environ.get("ONEGALLERY_QML")
     if override:
         return override if os.access(override, os.X_OK) else None
     for candidate in ("/usr/lib/qt6/bin/qml", "/usr/lib64/qt6/bin/qml", shutil.which("qml6"),
@@ -44,7 +44,7 @@ def qml_runtime() -> str | None:
 
 
 def purpose_installed() -> bool:
-    extra = os.environ.get("LGALLERY_QML_IMPORT_PATH", "")
+    extra = os.environ.get("ONEGALLERY_QML_IMPORT_PATH", "")
     dirs = [d for d in extra.split(os.pathsep) if d] + QML_DIRS
     return any(glob.glob(os.path.join(d, "org", "kde", "purpose", "qmldir")) for d in dirs)
 
@@ -67,7 +67,7 @@ def helper_env() -> dict:
     # never leak the pip-wheel Qt's paths into the system Qt helper
     for var in ("QML_IMPORT_PATH", "QML2_IMPORT_PATH", "QT_PLUGIN_PATH", "QT_QPA_PLATFORM_PLUGIN_PATH"):
         env.pop(var, None)
-    extra = env.pop("LGALLERY_QML_IMPORT_PATH", "")
+    extra = env.pop("ONEGALLERY_QML_IMPORT_PATH", "")
     if extra:
         env["QML_IMPORT_PATH"] = extra
     return env

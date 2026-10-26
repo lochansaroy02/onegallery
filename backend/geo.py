@@ -24,7 +24,7 @@ CITIES_URL = "https://download.geonames.org/export/dump/cities15000.zip"
 NEAR_KM = 60          # farther than this from any town: label with the country only
 CITY_KM = 12          # within this distance the largest town wins (Lisbon, not a parish of it)
 SKIP_CODES = {"PPLX", "PPLH", "PPLQ", "PPLW", "PPLCH"}  # districts, historical, abandoned
-USER_AGENT = "LGallery (+https://github.com/lochansaroy02/lgallery)"
+USER_AGENT = "One Gallery (+https://github.com/lochansaroy02/onegallery)"
 
 
 def data_available() -> bool:

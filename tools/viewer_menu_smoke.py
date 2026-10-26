@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Drive the viewer's ⋮ menu (themed menu, Set as ▸, Print…) and the print sheet.
 
-    QT_QPA_PLATFORM=offscreen python tools/viewer_menu_smoke.py --out /tmp/lgallery-menu-shots
+    QT_QPA_PLATFORM=offscreen python tools/viewer_menu_smoke.py --out /tmp/onegallery-menu-shots
 
 Set as is checked for presence only here (it would change this machine's wallpaper);
 tests/test_desktop.py covers the commands it runs. Printing goes to "Save as PDF".
@@ -21,8 +21,8 @@ parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
 parser.add_argument("--out", default="menu-shots")
 args = parser.parse_args()
 
-tmp = Path(tempfile.mkdtemp(prefix="lgallery-vmenu-"))
-os.environ["LGALLERY_HOME"] = str(tmp / "home")
+tmp = Path(tempfile.mkdtemp(prefix="onegallery-vmenu-"))
+os.environ["ONEGALLERY_HOME"] = str(tmp / "home")
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from PIL import Image  # noqa: E402

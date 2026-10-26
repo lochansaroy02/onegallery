@@ -1,4 +1,4 @@
-"""Watched folders and preferences, persisted to ~/.config/lgallery/config.json."""
+"""Watched folders and preferences, persisted to ~/.config/onegallery/config.json."""
 
 import json
 import logging

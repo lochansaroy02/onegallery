@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Drive the Collections tab: Stories slideshow, Places (real GeoNames download), People.
 
-    python tools/collections_smoke.py --faces DIR --out /tmp/lgallery-collections-shots
+    python tools/collections_smoke.py --faces DIR --out /tmp/onegallery-collections-shots
 
 DIR must contain face_detection_yunet_2023mar.onnx, face_recognition_sface_2021dec.onnx,
 lena.jpg and messi5.jpg (OpenCV samples); without --faces the People part is skipped.
@@ -21,8 +21,8 @@ parser.add_argument("--faces", default="")
 parser.add_argument("--out", default="collections-shots")
 args = parser.parse_args()
 
-tmp = Path(tempfile.mkdtemp(prefix="lgallery-coll-"))
-os.environ["LGALLERY_HOME"] = str(tmp / "home")
+tmp = Path(tempfile.mkdtemp(prefix="onegallery-coll-"))
+os.environ["ONEGALLERY_HOME"] = str(tmp / "home")
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from PIL import Image, ImageDraw, ImageEnhance, ImageOps  # noqa: E402

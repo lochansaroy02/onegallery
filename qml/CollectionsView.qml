@@ -257,13 +257,13 @@ Item {
                 visible: collections.peopleState === "unavailable"
                 icon: "users"
                 title: qsTr("Face grouping isn't installed")
-                text: qsTr("People needs OpenCV. Run ./update.sh in the Gallery folder to install it, then restart Gallery.")
+                text: qsTr("People needs OpenCV. Run ./update.sh in the One Gallery folder to install it, then restart One Gallery.")
             }
             InfoCard {
                 visible: collections.peopleState === "off"
                 icon: "users"
                 title: qsTr("Find people in your pictures")
-                text: qsTr("Gallery can recognise faces and group pictures of the same person. Everything runs on this computer and nothing is uploaded. The first time, it downloads face models (38 MB).")
+                text: qsTr("One Gallery can recognise faces and group pictures of the same person. Everything runs on this computer and nothing is uploaded. The first time, it downloads face models (38 MB).")
                 action: qsTr("Turn on")
                 onTriggered: collections.enablePeople()
             }
@@ -335,7 +335,7 @@ Item {
                 visible: collections.placesState === "need-data"
                 icon: "pin"
                 title: qsTr("Name the places in %1 pictures").arg(collections.gpsCount.toLocaleString(Qt.locale(), "f", 0))
-                text: qsTr("Gallery needs a list of towns (3 MB, from GeoNames) to turn locations into place names. Lookups then work offline.")
+                text: qsTr("One Gallery needs a list of towns (3 MB, from GeoNames) to turn locations into place names. Lookups then work offline.")
                 action: qsTr("Download")
                 onTriggered: collections.downloadPlaceNames()
             }

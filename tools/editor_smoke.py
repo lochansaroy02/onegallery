@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Drive the photo editor UI: tabs, filters, adjustments, crop, save as copy, save, revert.
 
-    python tools/editor_smoke.py samples --out /tmp/lgallery-editor-shots
+    python tools/editor_smoke.py samples --out /tmp/onegallery-editor-shots
 
-Works on a temporary copy of one sample sub-folder, with a throw-away LGALLERY_HOME.
+Works on a temporary copy of one sample sub-folder, with a throw-away ONEGALLERY_HOME.
 """
 
 import argparse
@@ -19,8 +19,8 @@ parser.add_argument("samples")
 parser.add_argument("--out", default="editor-shots")
 args = parser.parse_args()
 
-tmp = Path(tempfile.mkdtemp(prefix="lgallery-editor-"))
-os.environ["LGALLERY_HOME"] = str(tmp / "home")
+tmp = Path(tempfile.mkdtemp(prefix="onegallery-editor-"))
+os.environ["ONEGALLERY_HOME"] = str(tmp / "home")
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from PySide6.QtCore import QCoreApplication, QEventLoop  # noqa: E402

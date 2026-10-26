@@ -5,7 +5,7 @@ kscreenlockerrc (via kwriteconfig6 / kwriteconfig5) for the lock screen. Windows
 SystemParametersInfo for the desktop and the WinRT LockScreen API (through PowerShell)
 for the lock screen. GNOME and macOS desktops are handled too.
 
-The picture is first copied (upright, as JPEG or PNG) to ~/.local/share/lgallery/wallpapers,
+The picture is first copied (upright, as JPEG or PNG) to ~/.local/share/onegallery/wallpapers,
 so the wallpaper keeps working when the original is edited, moved, deleted or on a drive
 that gets unmounted.
 """

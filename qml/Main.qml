@@ -14,7 +14,7 @@ ApplicationWindow {
     minimumWidth: 440
     minimumHeight: 520
     visible: true
-    title: qsTr("Gallery")
+    title: qsTr("One Gallery")
     color: Theme.bg
     font.family: Theme.fontFamily
 

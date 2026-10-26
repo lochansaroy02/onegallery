@@ -1,4 +1,4 @@
-# Build the Windows installer (LGallery-<version>-setup.exe) on GitHub's Windows machines.
+# Build the Windows installer (OneGallery-<version>-setup.exe) on GitHub's Windows machines.
 #
 # - Push a tag like v0.3.0: builds and attaches the installer to that GitHub release.
 # - Actions tab > "Windows build" > Run workflow: builds and keeps the installer as a
@@ -50,9 +50,9 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: LGallery-windows
+          name: OneGallery-windows
           path: |
-            dist/LGallery-*-setup.exe
+            dist/OneGallery-*-setup.exe
             build/self-test.txt
           if-no-files-found: error
 
@@ -60,4 +60,4 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/LGallery-*-setup.exe
+          files: dist/OneGallery-*-setup.exe

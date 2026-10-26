@@ -8,7 +8,7 @@ import "components"
 Item {
     id: grid
     required property var photoModel
-    property string title: qsTr("Gallery")
+    property string title: qsTr("One Gallery")
     property string subtitle: countText(photoModel.itemCount)
     property bool busy: false
     property bool showBack: false

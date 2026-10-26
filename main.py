@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""LGallery entry point: sets up Qt, the index, providers and models, then loads QML."""
+"""One Gallery entry point: sets up Qt, the index, providers and models, then loads QML."""
 
 import json
 import logging
@@ -20,13 +20,14 @@ sys.path.insert(0, str(HERE))
 
 # "--self-test [report.txt]": start without a window or the user's data, check that the
 # interface and the optional parts (video, printing, ffmpeg) load, then exit 0 / 1. Used by
-# the Windows build to test the packaged LGallery.exe. Set up before the backend is imported.
+# the Windows build to test the packaged OneGallery.exe. Set up before the backend is imported.
 SELF_TEST = "--self-test" in sys.argv
 if SELF_TEST:
     import tempfile
-    os.environ["LGALLERY_HOME"] = tempfile.mkdtemp(prefix="lgallery-selftest-")
+    os.environ["ONEGALLERY_HOME"] = tempfile.mkdtemp(prefix="onegallery-selftest-")
     os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
+import backend  # noqa: E402
 from backend import db, external  # noqa: E402
 from backend.collections import Collections  # noqa: E402
 from backend.controller import Gallery  # noqa: E402
@@ -35,7 +36,7 @@ from backend.private import PrivateAlbum, PrivateImageProvider  # noqa: E402
 from backend.settings import Settings  # noqa: E402
 from backend.thumbs import ImageProvider  # noqa: E402
 
-APP_ID = "lgallery"
+APP_ID = "onegallery"
 SERVER_NAME = f"{APP_ID}-{os.getuid()}" if hasattr(os, "getuid") else APP_ID
 
 
@@ -105,7 +106,7 @@ class ThemeIconProvider(QQuickImageProvider):
 
 def find_icon() -> str:
     for candidate in (HERE / "packaging" / "icon.svg",
-                      Path("/usr/share/icons/hicolor/scalable/apps/lgallery.svg")):
+                      Path("/usr/share/icons/hicolor/scalable/apps/onegallery.svg")):
         if candidate.exists():
             return str(candidate)
     return ""
@@ -116,17 +117,19 @@ def create_app(argv=None, files=None):
 
     files: pictures to open right away in the viewer (opened from a file manager)."""
     logging.basicConfig(
-        level=os.environ.get("LGALLERY_LOG", "INFO").upper(),
+        level=os.environ.get("ONEGALLERY_LOG", "INFO").upper(),
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
+    for line in backend.migrate_old_name():  # LGallery -> One Gallery, once
+        logging.getLogger("onegallery").info(line)
     QGuiApplication.setApplicationName(APP_ID)
-    QGuiApplication.setApplicationDisplayName("Gallery")
+    QGuiApplication.setApplicationDisplayName("One Gallery")
     QGuiApplication.setOrganizationName(APP_ID)
-    QGuiApplication.setDesktopFileName(APP_ID)  # Wayland: match lgallery.desktop for the icon
+    QGuiApplication.setDesktopFileName(APP_ID)  # Wayland: match onegallery.desktop for the icon
     if sys.platform == "win32":  # own taskbar group and icon instead of python.exe's
         try:
             import ctypes
-            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("LGallery.Gallery")
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("OneGallery.Gallery")
         except (AttributeError, OSError):
             pass
     # Basic is fully customisable; the KDE desktop style would override our One UI look.
@@ -189,7 +192,7 @@ def self_test() -> int:
     args = sys.argv[1:]
     i = args.index("--self-test")
     report_path = args[i + 1] if i + 1 < len(args) and not args[i + 1].startswith("-") else ""
-    lines, ok = [f"LGallery {__version__} self-test", f"python {sys.version.split()[0]}"], True
+    lines, ok = [f"One Gallery {__version__} self-test", f"python {sys.version.split()[0]}"], True
     try:
         app, engine, gallery = create_app([sys.argv[0]])
         root = engine.rootObjects()[0]

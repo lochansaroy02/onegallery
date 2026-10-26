@@ -2,9 +2,9 @@
 """Drive the real UI against a sample folder, save screenshots and measure scrolling.
 
     python tools/make_samples.py samples --count 5000
-    python tools/ui_smoke.py samples --out /tmp/lgallery-shots
+    python tools/ui_smoke.py samples --out /tmp/onegallery-shots
 
-Uses a throw-away LGALLERY_HOME so your real index and settings are untouched.
+Uses a throw-away ONEGALLERY_HOME so your real index and settings are untouched.
 """
 
 import argparse
@@ -21,8 +21,8 @@ parser.add_argument("--out", default="ui-shots")
 parser.add_argument("--keep-home", action="store_true", help="reuse ./.smoke-home")
 args = parser.parse_args()
 
-home = Path(".smoke-home").resolve() if args.keep_home else Path(tempfile.mkdtemp(prefix="lgallery-smoke-"))
-os.environ["LGALLERY_HOME"] = str(home)
+home = Path(".smoke-home").resolve() if args.keep_home else Path(tempfile.mkdtemp(prefix="onegallery-smoke-"))
+os.environ["ONEGALLERY_HOME"] = str(home)
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from PySide6.QtCore import QCoreApplication, QElapsedTimer, QEventLoop  # noqa: E402

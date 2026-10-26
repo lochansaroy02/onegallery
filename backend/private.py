@@ -30,7 +30,7 @@ from .thumbs import _Response, _to_qimage
 log = logging.getLogger(__name__)
 
 VAULT_DIR = DATA_DIR / "private"
-TEMP_PREFIX = "lgallery-private-videos-"
+TEMP_PREFIX = "onegallery-private-videos-"
 ID_BASE = -2_000_000_000   # private items get ids below this (library ids are positive)
 RESTORE_FOLDER = "Restored from private album"
 
@@ -78,7 +78,7 @@ def _meta_for(path: str) -> dict:
     else:
         meta = read_metadata(path, st.st_mtime)
         if meta is None:
-            raise vault.VaultError("not a picture or video Gallery can read")
+            raise vault.VaultError("not a picture or video One Gallery can read")
         taken, width, height, is_video, duration = meta.taken, meta.width, meta.height, meta.video, meta.duration
     return {"name": os.path.basename(path), "path": path, "taken": int(taken), "mtime": st.st_mtime,
             "size": st.st_size, "width": width, "height": height, "video": bool(is_video),
