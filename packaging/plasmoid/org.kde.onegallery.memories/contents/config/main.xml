@@ -4,9 +4,17 @@
       xsi:schemaLocation="http://www.kde.org/standards/kcfg/1.0 http://www.kde.org/standards/kcfg/1.0/kcfg.xsd">
   <kcfgfile name=""/>
   <group name="General">
-    <!-- memories (falls back to favorites, then recent), favorites, recent -->
+    <!-- memories (falls back to favorites, then recent), favorites, recent, folder -->
     <entry name="source" type="String">
       <default>memories</default>
+    </entry>
+    <!-- for source=folder: any folders, in One Gallery's library or not -->
+    <entry name="folders" type="StringList">
+      <default></default>
+    </entry>
+    <!-- fade, slide (Windows live tile), mosaic (Windows live tile, flipping cells) -->
+    <entry name="transition" type="String">
+      <default>fade</default>
     </entry>
     <!-- seconds per picture -->
     <entry name="interval" type="Int">

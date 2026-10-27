@@ -25,10 +25,17 @@ PlasmoidItem {
     property bool appMissing: false
     property int index: 0
 
+    readonly property bool folderMode: Plasmoid.configuration.source === "folder"
+    readonly property var folders: Plasmoid.configuration.folders || []
+    // the folders the last forced rebuild asked for, so a missing folder is asked for once
+    property string requestedFolders: ""
+
     readonly property var items: {
-        const lists = feed ? feed.lists : null
-        if (!lists)
+        if (!feed)
             return []
+        if (folderMode)
+            return interleave(folders.map(folder => (feed.folders || {})[folder] || []))
+        const lists = feed.lists
         const order = {
             memories: ["memories", "favorites", "recent"],
             favorites: ["favorites", "recent"],
@@ -41,6 +48,11 @@ PlasmoidItem {
         return []
     }
     readonly property var current: items.length ? items[Math.min(index, items.length - 1)] : null
+    readonly property bool foldersMissing: folderMode && folders.some(
+        folder => !feed || !feed.folders || !(folder in feed.folders))
+
+    onFoldersChanged: reload()
+    onFolderModeChanged: reload()
 
     Plasmoid.backgroundHints: PlasmaCore.Types.DefaultBackground | PlasmaCore.Types.ConfigurableBackground
     toolTipMainText: current ? current.title : i18n("One Gallery Memories")
@@ -88,6 +100,19 @@ PlasmoidItem {
         return "'" + String(text).replace(/'/g, "'\\''") + "'"
     }
 
+    // a picture from each folder in turn
+    function interleave(lists) {
+        const out = []
+        const longest = Math.max(0, ...lists.map(list => list.length))
+        for (let i = 0; i < longest; i++) {
+            for (const list of lists) {
+                if (i < list.length)
+                    out.push(list[i])
+            }
+        }
+        return out
+    }
+
     function today() {
         return Qt.formatDate(new Date(), "yyyy-MM-dd")
     }
@@ -109,7 +134,9 @@ PlasmoidItem {
                     console.warn("One Gallery Memories: unreadable feed:", e)
                 }
             }
-            if (!feed || feed.day !== today())
+            if (foldersMissing && requestedFolders !== folders.join("\n"))
+                rebuild(true)
+            else if (!feed || feed.day !== today())
                 rebuild(false)
         })
     }
@@ -119,7 +146,12 @@ PlasmoidItem {
             return
         building = true
         lastBuild = Date.now()
-        run(app + " --widget-feed", code => {
+        let command = app + " --widget-feed"
+        if (folderMode) {
+            requestedFolders = folders.join("\n")
+            command += folders.map(folder => " --folder " + quote(folder)).join("")
+        }
+        run(command, code => {
             building = false
             appMissing = code === 127
             if (code === 0)
@@ -151,7 +183,7 @@ PlasmoidItem {
 
     Timer {
         id: slideshow
-        interval: Math.max(5, Plasmoid.configuration.interval) * 1000
+        interval: Math.max(3, Plasmoid.configuration.interval) * 1000
         running: root.items.length > 1 && !root.hovering
         repeat: true
         onTriggered: root.step(1)
@@ -190,22 +222,44 @@ PlasmoidItem {
         Layout.minimumWidth: Kirigami.Units.gridUnit * 8
         Layout.minimumHeight: Kirigami.Units.gridUnit * 6
 
-        MemoryFrame {
-            id: frame
+        Loader {
             anchors.fill: parent
             visible: root.current !== null
-            items: root.items
-            index: root.index
-            crop: Plasmoid.configuration.crop
-            showCaption: Plasmoid.configuration.showCaption
-            slowZoom: Plasmoid.configuration.slowZoom
-            interval: slideshow.interval
-            radius: Kirigami.Units.cornerRadius * 3
-            fontPixelSize: Math.max(11, Math.min(16, Math.min(width, height) / 22))
-            onActivated: item => root.open(item)
-            onNext: root.step(1)
-            onPrevious: root.step(-1)
-            onHoveredChanged: root.hovering = hovered
+            sourceComponent: Plasmoid.configuration.transition === "mosaic" ? mosaicView : frameView
+        }
+
+        Component {
+            id: frameView
+            MemoryFrame {
+                items: root.items
+                index: root.index
+                transition: Plasmoid.configuration.transition === "slide" ? "slide" : "fade"
+                crop: Plasmoid.configuration.crop
+                showCaption: Plasmoid.configuration.showCaption
+                slowZoom: Plasmoid.configuration.slowZoom
+                interval: slideshow.interval
+                radius: Kirigami.Units.cornerRadius * 3
+                fontPixelSize: Math.max(11, Math.min(16, Math.min(width, height) / 22))
+                onActivated: item => root.open(item)
+                onNext: root.step(1)
+                onPrevious: root.step(-1)
+                onHoveredChanged: root.hovering = hovered
+            }
+        }
+
+        Component {
+            id: mosaicView
+            TileMosaic {
+                items: root.items
+                index: root.index
+                showCaption: Plasmoid.configuration.showCaption
+                radius: Kirigami.Units.cornerRadius * 3
+                fontPixelSize: Math.max(11, Math.min(16, Math.min(width, height) / 22))
+                onActivated: item => root.open(item)
+                onNext: root.step(1)
+                onPrevious: root.step(-1)
+                onHoveredChanged: root.hovering = hovered
+            }
         }
 
         QQC2.BusyIndicator {
@@ -219,15 +273,24 @@ PlasmoidItem {
             width: parent.width - Kirigami.Units.gridUnit * 2
             visible: root.current === null && !root.building
             iconName: root.appMissing ? "dialog-warning" : "folder-pictures"
+            readonly property bool chooseFolder: root.folderMode && !root.folders.length
             text: root.appMissing ? i18n("One Gallery is not installed")
-                  : root.feed ? i18n("No pictures yet") : i18n("Loading your pictures…")
+                  : chooseFolder ? i18n("No folder chosen")
+                  : !root.feed ? i18n("Loading your pictures…")
+                  : root.folderMode ? i18n("No pictures in these folders")
+                  : i18n("No pictures yet")
             explanation: root.appMissing
                 ? i18n("This widget shows pictures from One Gallery's library. Install One Gallery, then refresh the widget.")
+                : root.folderMode
+                ? i18n("Choose the folders whose pictures this widget shows in its settings.")
                 : i18n("Add your photo folders in One Gallery, and your memories, favorites and latest pictures appear here.")
             helpfulAction: QQC2.Action {
-                icon.name: root.appMissing ? "view-refresh" : "onegallery"
-                text: root.appMissing ? i18n("Refresh") : i18n("Open One Gallery")
-                onTriggered: root.appMissing ? root.rebuild(true) : root.run(root.app)
+                icon.name: root.appMissing ? "view-refresh" : root.folderMode ? "configure" : "onegallery"
+                text: root.appMissing ? i18n("Refresh")
+                      : root.folderMode ? i18n("Choose Folders…") : i18n("Open One Gallery")
+                onTriggered: root.appMissing ? root.rebuild(true)
+                             : root.folderMode ? Plasmoid.internalAction("configure").trigger()
+                             : root.run(root.app)
             }
         }
     }

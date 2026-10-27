@@ -1,15 +1,16 @@
-// The photo frame itself: cross-fading pictures with rounded corners, a slow zoom, a caption
-// and previous/next buttons on hover. Plain QtQuick (no Plasma imports), so it can also be
-// rendered outside plasmashell (tools/widget_smoke.py).
+// One picture at a time, with rounded corners, a slow zoom, a caption and previous/next
+// buttons on hover. Pictures change with a cross-fade, or slide up like a Windows live tile.
+// Plain QtQuick (no Plasma imports), so it can also be rendered outside plasmashell
+// (tools/widget_smoke.py).
 import QtQuick
 import QtQuick.Effects
-import QtQuick.Shapes
 
 Item {
     id: frame
 
     property var items: []            // [{image, path, title, subtitle}] from feed.json
     property int index: 0
+    property string transition: "fade"   // "fade" or "slide"
     property bool crop: true          // fill and crop, or fit the whole picture
     property bool showCaption: true
     property bool slowZoom: true
@@ -31,6 +32,7 @@ Item {
 
     property Item _shown: null
     property Item _pending: null
+    property int _lastIndex: -1
 
     function _load() {
         if (!current) {
@@ -38,21 +40,26 @@ Item {
             if (_shown) { _shown.destroy(); _shown = null }
             return
         }
+        // backwards (slides down) only when stepping to the previous picture
+        const count = items.length
+        const back = _lastIndex >= 0 && count > 2 && index === (_lastIndex - 1 + count) % count
+        _lastIndex = index
         const url = fileUrl(current.image)
         if (_shown && _shown.source.toString() === url && !_pending)
             return
         if (_pending)
             _pending.destroy()
-        _pending = slide.createObject(slides, { source: url, origin: index % 4 })
+        _pending = slide.createObject(slides, {
+            source: url, item: current, origin: index % 4, direction: back ? -1 : 1 })
     }
 
-    function _reveal(img) {
-        if (img !== _pending)
+    function _reveal(page) {
+        if (page !== _pending)
             return
         _pending = null
         const before = _shown
-        _shown = img
-        img.reveal(before)
+        _shown = page
+        page.reveal(before)
     }
 
     onCurrentChanged: _load()
@@ -81,43 +88,7 @@ Item {
         Item {
             id: slides
             anchors.fill: parent
-        }
-
-        Rectangle {   // caption scrim
-            anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
-            height: Math.min(parent.height * 0.55, caption.implicitHeight + frame.radius * 3)
-            visible: frame.showCaption && frame.current !== null
-            gradient: Gradient {
-                GradientStop { position: 0.0; color: "transparent" }
-                GradientStop { position: 1.0; color: "#a6000000" }
-            }
-        }
-
-        Column {
-            id: caption
-            anchors {
-                left: parent.left; right: parent.right; bottom: parent.bottom
-                leftMargin: Math.max(14, frame.radius * 0.8); rightMargin: anchors.leftMargin
-                bottomMargin: Math.max(12, frame.radius * 0.7)
-            }
-            spacing: 2
-            visible: frame.showCaption && frame.current !== null
-            Text {
-                width: parent.width
-                text: frame.current ? frame.current.title : ""
-                color: "white"
-                font.pixelSize: frame.fontPixelSize * 1.45
-                font.weight: Font.Bold
-                elide: Text.ElideRight
-            }
-            Text {
-                width: parent.width
-                text: frame.current ? frame.current.subtitle : ""
-                color: "#e6ffffff"
-                font.pixelSize: frame.fontPixelSize
-                elide: Text.ElideRight
-                visible: text.length > 0
-            }
+            clip: true
         }
     }
 
@@ -180,71 +151,127 @@ Item {
         }
     }
 
-    component NavButton: Rectangle {
-        id: button
-        property bool pointsLeft: false
-        signal clicked()
-        width: 34
-        height: 34
-        radius: 17
-        color: area.pressed ? "#a6000000" : area.containsMouse ? "#8c000000" : "#66000000"
-        Behavior on color { ColorAnimation { duration: 120 } }
-        Shape {
-            anchors.centerIn: parent
-            width: 8
-            height: 14
-            preferredRendererType: Shape.CurveRenderer
-            ShapePath {
-                strokeColor: "white"
-                strokeWidth: 2
-                fillColor: "transparent"
-                capStyle: ShapePath.RoundCap
-                joinStyle: ShapePath.RoundJoin
-                startX: button.pointsLeft ? 7 : 1; startY: 1
-                PathLine { x: button.pointsLeft ? 1 : 7; y: 7 }
-                PathLine { x: button.pointsLeft ? 7 : 1; y: 13 }
-            }
-        }
-        MouseArea {
-            id: area
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: button.clicked()
-        }
-    }
-
+    // one picture with its caption; the caption fades or slides along with it
     Component {
         id: slide
-        Image {
-            id: img
+        Item {
+            id: page
+            property var item
+            property alias source: img.source
             property int origin: 0
+            property int direction: 1      // 1: the new picture comes up from below
             property Item before: null
-            anchors.fill: parent
-            asynchronous: true
-            cache: false
-            smooth: true
-            mipmap: true
-            fillMode: frame.crop ? Image.PreserveAspectCrop : Image.PreserveAspectFit
+            width: slides.width
+            height: slides.height
             opacity: 0
-            transformOrigin: [Item.TopLeft, Item.BottomRight, Item.TopRight, Item.BottomLeft][origin]
-            onStatusChanged: if (status === Image.Ready || status === Image.Error) frame._reveal(img)
+            clip: true   // the slow zoom stays inside the picture while sliding
+
+            Image {
+                id: img
+                anchors.fill: parent
+                asynchronous: true
+                cache: false
+                smooth: true
+                mipmap: true
+                fillMode: frame.crop ? Image.PreserveAspectCrop : Image.PreserveAspectFit
+                transformOrigin: [Item.TopLeft, Item.BottomRight, Item.TopRight, Item.BottomLeft][page.origin]
+                onStatusChanged: if (status === Image.Ready || status === Image.Error) frame._reveal(page)
+            }
+
+            Rectangle {   // caption scrim
+                anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
+                height: Math.min(parent.height * 0.55, caption.implicitHeight + frame.radius * 3)
+                visible: frame.showCaption
+                gradient: Gradient {
+                    GradientStop { position: 0.0; color: "transparent" }
+                    GradientStop { position: 1.0; color: "#a6000000" }
+                }
+            }
+
+            Column {
+                id: caption
+                anchors {
+                    left: parent.left; right: parent.right; bottom: parent.bottom
+                    leftMargin: Math.max(14, frame.radius * 0.8); rightMargin: anchors.leftMargin
+                    bottomMargin: Math.max(12, frame.radius * 0.7)
+                }
+                spacing: 2
+                visible: frame.showCaption
+                Text {
+                    width: parent.width
+                    text: page.item ? page.item.title : ""
+                    color: "white"
+                    font.pixelSize: frame.fontPixelSize * 1.45
+                    font.weight: Font.Bold
+                    elide: Text.ElideRight
+                }
+                Text {
+                    width: parent.width
+                    text: page.item ? page.item.subtitle : ""
+                    color: "#e6ffffff"
+                    font.pixelSize: frame.fontPixelSize
+                    elide: Text.ElideRight
+                    visible: text.length > 0
+                }
+            }
 
             function reveal(previous) {
+                if (previous)
+                    previous.settle()   // still arriving: finish it now (fast clicking)
                 before = previous
-                fade.start()
+                if (frame.transition === "slide" && previous) {
+                    opacity = 1
+                    slideIn.from = direction * height
+                    slideOut.target = previous
+                    slideOut.to = -direction * height
+                    sliding.start()
+                } else {
+                    fade.start()
+                }
                 if (frame.slowZoom && frame.crop)
                     zoom.start()
             }
 
+            function settle() {
+                fade.stop()
+                sliding.stop()
+                y = 0
+                opacity = 1
+                _dropBefore()
+            }
+
+            function _dropBefore() {
+                if (before) { before.destroy(); before = null }
+            }
+
             OpacityAnimator {
                 id: fade
-                target: img
+                target: page
                 from: 0
                 to: 1
                 duration: 800
                 easing.type: Easing.InOutQuad
-                onFinished: if (img.before) { img.before.destroy(); img.before = null }
+                onFinished: page._dropBefore()
+            }
+            // Windows live tile: the new picture pushes the old one out, fast then settling
+            ParallelAnimation {
+                id: sliding
+                onFinished: page._dropBefore()
+                NumberAnimation {
+                    id: slideIn
+                    target: page
+                    property: "y"
+                    to: 0
+                    duration: 900
+                    easing.type: Easing.OutQuint
+                }
+                NumberAnimation {
+                    id: slideOut
+                    property: "y"
+                    from: 0
+                    duration: 900
+                    easing.type: Easing.OutQuint
+                }
             }
             NumberAnimation {
                 id: zoom

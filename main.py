@@ -264,7 +264,7 @@ def main():
         sys.exit(self_test())
     args = sys.argv[1:]
     if "--widget-feed" in args:  # run by the Plasma widget: refresh its pictures, no window
-        sys.exit(widget_feed())
+        sys.exit(widget_feed(args))
     app = QGuiApplication.instance() or (MacApplication if sys.platform == "darwin" else QGuiApplication)(sys.argv)
     files = external.paths_from_args(args)
     if "--new-instance" not in args and forward_to_running_instance(files):

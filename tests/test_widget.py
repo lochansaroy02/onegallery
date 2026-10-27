@@ -121,15 +121,92 @@ class FeedTests(unittest.TestCase):
             else:
                 os.environ["XDG_CONFIG_HOME"] = old
 
+    def test_folders(self):
+        outside = Path(TMP) / "frame pictures"     # not in the library, with a space
+        (outside / "trip").mkdir(parents=True)
+        (outside / ".hidden").mkdir()
+        photo(str(outside / "a.jpg"), years_ago(5))
+        photo(str(outside / "trip" / "b.jpeg"), datetime(2020, 3, 4, 10, 0))
+        photo(str(outside / ".hidden" / "c.jpg"), datetime(2020, 3, 4, 10, 0))
+        (outside / "notes.txt").write_text("not a picture")
+        missing = str(Path(TMP) / "unplugged drive")
+
+        feed = widget.build_feed(TODAY, folders=[str(outside), self.lib, missing])
+        folders = feed["folders"]
+        self.assertEqual(list(folders), [str(outside), self.lib, missing])
+        self.assertEqual(folders[missing], [])
+        pictures = folders[str(outside)]
+        self.assertEqual(sorted(i["path"] for i in pictures),
+                         [str(outside / "a.jpg"), str(outside / "trip" / "b.jpeg")])
+        self.assertTrue(all(i["title"] == "frame pictures" for i in pictures))
+        b = next(i for i in pictures if i["path"].endswith("b.jpeg"))
+        self.assertIn("2020", b["subtitle"])        # date read from the file itself
+        self.assertTrue(all(Path(i["image"]).is_file() for i in pictures))
+        # library folder: dates come from the index, and the corrupt file is left out
+        self.assertNotIn(self.broken, [i["path"] for i in folders[self.lib]])
+
+        # the same selection all day, another one tomorrow
+        again = widget.build_feed(TODAY, folders=[str(outside)])
+        self.assertEqual(again["folders"][str(outside)], pictures)
+
+    def test_folder_selection_is_limited(self):
+        many = Path(TMP) / "many"
+        many.mkdir()
+        for i in range(widget.PER_FOLDER + 15):
+            Image.new("RGB", (40, 30), (i, 100, 200)).save(many / f"{i:03}.png")
+        items = widget._folder(str(many), TODAY)
+        self.assertEqual(len(items), widget.PER_FOLDER)
+        self.assertEqual(len({i["path"] for i in items}), widget.PER_FOLDER)
+        tomorrow = widget._folder(str(many), date.fromordinal(TODAY.toordinal() + 1))
+        self.assertNotEqual([i["path"] for i in items], [i["path"] for i in tomorrow])
+
+    def test_folders_from_plasma_config(self):
+        config = Path(TMP) / "xdg-config-folders"
+        config.mkdir(exist_ok=True)
+        (config / "plasma-org.kde.plasma.desktop-appletsrc").write_text(
+            "[Containments][1][Applets][9]\n"
+            "immutability=1\n"
+            "plugin=org.kde.onegallery.memories\n"
+            "\n"
+            "[Containments][1][Applets][9][Configuration][General]\n"
+            "folders=/home/me/Pictures/Trip,/mnt/photos/a\\, b,/home/me/My\\sPhotos\n"
+            "source=folder\n"
+            "\n"
+            "[Containments][1][Applets][12]\n"
+            "plugin=org.kde.onegallery.memories\n"
+            "\n"
+            "[Containments][1][Applets][12][Configuration][General]\n"
+            "folders=/ignored/because/source/is/memories\n"
+            "\n"
+            "[Containments][1][Applets][14]\n"
+            "plugin=org.kde.onegallery.memories\n"
+            "\n"
+            "[Containments][1][Applets][14][Configuration][General]\n"
+            "folders=/home/me/Pictures/Trip\n"
+            "source=folder\n", encoding="utf-8")
+        old = os.environ.get("XDG_CONFIG_HOME")
+        os.environ["XDG_CONFIG_HOME"] = str(config)
+        try:
+            self.assertTrue(widget.in_use())
+            self.assertEqual(widget.configured_folders(),
+                             ["/home/me/Pictures/Trip", "/mnt/photos/a, b", "/home/me/My Photos"])
+        finally:
+            if old is None:
+                os.environ.pop("XDG_CONFIG_HOME")
+            else:
+                os.environ["XDG_CONFIG_HOME"] = old
+
     def test_command_line(self):
         env = dict(os.environ, ONEGALLERY_HOME=os.path.join(TMP, "cli-home"))
-        result = subprocess.run([sys.executable, str(ROOT / "main.py"), "--widget-feed"],
+        result = subprocess.run([sys.executable, str(ROOT / "main.py"), "--widget-feed",
+                                 "--folder", self.lib],
                                 env=env, capture_output=True, text=True, timeout=120)
         self.assertEqual(result.returncode, 0, result.stderr)
         feed_path = Path(result.stdout.strip())
         self.assertEqual(feed_path.name, "feed.json")
         feed = json.loads(feed_path.read_text(encoding="utf-8"))
         self.assertEqual(feed["lists"], {"memories": [], "favorites": [], "recent": []})
+        self.assertEqual(len(feed["folders"][self.lib]), 3)   # not indexed there; broken left out
 
 
 class PackageTests(unittest.TestCase):
@@ -139,7 +216,8 @@ class PackageTests(unittest.TestCase):
         meta = json.loads((self.PLASMOID / "metadata.json").read_text(encoding="utf-8"))
         self.assertEqual(meta["KPlugin"]["Id"], widget.PLUGIN_ID)
         self.assertEqual(meta["KPackageStructure"], "Plasma/Applet")
-        for part in ("ui/main.qml", "ui/MemoryFrame.qml", "ui/configGeneral.qml",
+        for part in ("ui/main.qml", "ui/MemoryFrame.qml", "ui/TileMosaic.qml", "ui/NavButton.qml",
+                     "ui/configGeneral.qml",
                      "config/config.qml", "config/main.xml"):
             self.assertTrue((self.PLASMOID / "contents" / part).is_file(), part)
 
