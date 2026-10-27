@@ -120,6 +120,40 @@ Item {
                     onClicked: gallery.addFolder(gallery.suggestedFolder)
                 }
             }
+            // phones paired with KDE Connect (set up, or connected now)
+            Column {
+                id: phoneList
+                readonly property var shown: phones.available
+                    ? phones.devices.filter(function(p) { return p.setUp || p.reachable || p.busy }) : []
+                x: Theme.pageMargin
+                width: parent.width - 2 * Theme.pageMargin
+                visible: shown.length > 0
+                spacing: Theme.s2
+                Text {
+                    leftPadding: Theme.s4
+                    text: qsTr("Phones")
+                    color: Theme.accent
+                    font.pixelSize: Theme.fontSmall + 1
+                    font.weight: Font.DemiBold
+                }
+                Repeater {
+                    model: phoneList.shown
+                    PhoneCard {
+                        required property var modelData
+                        width: phoneList.width
+                        phone: modelData
+                    }
+                }
+                Text {
+                    leftPadding: Theme.s4
+                    topPadding: Theme.s2
+                    text: qsTr("Folders")
+                    color: Theme.accent
+                    font.pixelSize: Theme.fontSmall + 1
+                    font.weight: Font.DemiBold
+                    visible: gallery.hasFolders
+                }
+            }
             Item { width: 1; height: Theme.s1 }
         }
 

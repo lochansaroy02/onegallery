@@ -24,6 +24,8 @@ DEFAULTS = {
     "sort_ascending": False,  # False = newest first
     "recent_files": [],       # pictures opened from outside the library
     "faces_enabled": False,   # People: on-device face grouping (opt-in)
+    "phones": {},             # KDE Connect device id -> {name, auto, since, last_sync, last_try, count}
+    "phone_screenshots": True,  # phone sync also imports screenshots
 }
 MAX_RECENT = 10
 
@@ -58,6 +60,7 @@ class Settings(QObject):
     sortAscendingChanged = Signal()
     recentFilesChanged = Signal()
     facesEnabledChanged = Signal()
+    phoneScreenshotsChanged = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -78,6 +81,9 @@ class Settings(QObject):
         self._data["folders"] = [
             f for f in self._data.get("folders", []) if isinstance(f, dict) and f.get("path")
         ]
+        phones = self._data.get("phones")
+        self._data["phones"] = {k: v for k, v in phones.items() if isinstance(v, dict)} \
+            if isinstance(phones, dict) else {}
 
     def save(self):
         try:
@@ -243,6 +249,33 @@ class Settings(QObject):
         self._set("faces_enabled", bool(value), self.facesEnabledChanged)
 
     facesEnabled = Property(bool, _get_faces, _set_faces, notify=facesEnabledChanged)
+
+    # ---- phone sync (KDE Connect) ------------------------------------
+    def phones(self) -> dict:
+        return {k: dict(v) for k, v in self._data["phones"].items()}
+
+    def phone(self, device_id: str) -> dict | None:
+        entry = self._data["phones"].get(device_id)
+        return dict(entry) if entry is not None else None
+
+    def set_phone(self, device_id: str, entry: dict) -> None:
+        if self._data["phones"].get(device_id) != entry:
+            self._data["phones"] = {**self._data["phones"], device_id: dict(entry)}
+            self.save()
+
+    def remove_phone(self, device_id: str) -> None:
+        if device_id in self._data["phones"]:
+            self._data["phones"] = {k: v for k, v in self._data["phones"].items() if k != device_id}
+            self.save()
+
+    def _get_phone_screenshots(self):
+        return bool(self._data["phone_screenshots"])
+
+    def _set_phone_screenshots(self, value):
+        self._set("phone_screenshots", bool(value), self.phoneScreenshotsChanged)
+
+    phoneScreenshots = Property(bool, _get_phone_screenshots, _set_phone_screenshots,
+                                notify=phoneScreenshotsChanged)
 
     @Property("QStringList", notify=recentFilesChanged)
     def recentFiles(self):

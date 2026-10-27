@@ -43,6 +43,16 @@ CREATE TABLE IF NOT EXISTS faces (
 );
 CREATE INDEX IF NOT EXISTS idx_faces_image ON faces(image_id);
 CREATE INDEX IF NOT EXISTS idx_faces_person ON faces(person_id);
+
+-- files already imported from a phone (or there when it was set up): never imported twice
+CREATE TABLE IF NOT EXISTS phone_imports (
+    device   TEXT NOT NULL,                  -- KDE Connect device id
+    key      TEXT NOT NULL,                  -- path on the phone, below its storage
+    size     INTEGER NOT NULL,
+    mtime    INTEGER NOT NULL,
+    imported INTEGER NOT NULL,               -- when (unix time)
+    PRIMARY KEY (device, key)
+);
 """
 
 # columns added after the first release (migrated in place)

@@ -32,6 +32,7 @@ from backend import db, external  # noqa: E402
 from backend.collections import Collections  # noqa: E402
 from backend.controller import Gallery  # noqa: E402
 from backend.editor import EditImageProvider, Editor  # noqa: E402
+from backend.phone import PhoneSync  # noqa: E402
 from backend.private import PrivateAlbum, PrivateImageProvider  # noqa: E402
 from backend.settings import Settings  # noqa: E402
 from backend.thumbs import ImageProvider  # noqa: E402
@@ -176,6 +177,7 @@ def create_app(argv=None, files=None):
     collections = Collections(gallery, settings, app)
     editor = Editor(app)
     private_album = PrivateAlbum(gallery, settings, app)
+    phones = PhoneSync(gallery, settings, parent=app)
     editor.libraryChanged.connect(gallery.reloadLibrary)
     editor.message.connect(gallery.toast)
 
@@ -201,6 +203,7 @@ def create_app(argv=None, files=None):
     ctx.setContextProperty("collections", collections)
     ctx.setContextProperty("privateAlbum", private_album)
     ctx.setContextProperty("privatePhotos", private_album.photos)
+    ctx.setContextProperty("phones", phones)
 
     engine.load(QUrl.fromLocalFile(str(HERE / "qml" / "Main.qml")))
     if not engine.rootObjects():
@@ -208,6 +211,7 @@ def create_app(argv=None, files=None):
     app.aboutToQuit.connect(gallery.shutdown)
     app.aboutToQuit.connect(collections.shutdown)
     app.aboutToQuit.connect(private_album.shutdown)
+    app.aboutToQuit.connect(phones.shutdown)
     if files:
         gallery.openFiles(files)
     return app, engine, gallery

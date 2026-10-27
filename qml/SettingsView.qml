@@ -351,6 +351,19 @@ Item {
             }
 
             Group {
+                title: qsTr("Phones")
+                visible: phones.available
+                SettingRow {
+                    title: qsTr("Import screenshots")
+                    subtitle: qsTr("Phones paired with KDE Connect: also import the screenshot folders, not only the camera")
+                    OneSwitch {
+                        checked: prefs.phoneScreenshots
+                        onToggled: (c) => prefs.phoneScreenshots = c
+                    }
+                }
+            }
+
+            Group {
                 title: qsTr("Collections")
                 SettingRow {
                     title: qsTr("People (face grouping)")

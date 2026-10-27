@@ -13,6 +13,7 @@ One Gallery is a desktop photo and video gallery for Arch-based Linux (Manjaro) 
   - **Places:** pictures grouped by town and country, from GPS.
   - **People:** on-device face grouping, with naming, merging and hiding.
 - **Folders tab:** add or remove watched folders and rescan. Removing a folder **never deletes files**.
+- **Phone sync:** new photos and videos from your Android phone arrive over Wi-Fi through KDE Connect, with no cable and no cloud. See [Phone sync](#phone-sync-kde-connect).
 - **Selection mode:** right-click or long-press a picture, or tick a day header to select the whole day. Actions: Delete (to the trash), Share, Open with, Copy path, Show in folder.
 - **Share menu:** the same options as Dolphin's *Share* submenu: Copy to Clipboard, KDE Connect, Bluetooth, e-mail, Telegram, Imgur, Nextcloud, Google Drive and anything else your KDE has installed.
 - **Viewer:** arrow keys or swipe to move between pictures, wheel or double-click or pinch to zoom, drag to pan, and a Details panel. The ⋮ menu offers:
@@ -54,7 +55,7 @@ git clone https://aur.archlinux.org/onegallery.git
 cd onegallery && makepkg -si
 ```
 
-Optional extras: `sudo pacman -S python-pillow-heif python-opencv python-watchdog purpose` (HEIC photos, People, live updates, the KDE share menu).
+Optional extras: `sudo pacman -S python-pillow-heif python-opencv python-watchdog purpose kdeconnect sshfs` (HEIC photos, People, live updates, the KDE share menu, phone sync).
 
 ## Windows
 
@@ -333,6 +334,27 @@ Keep pictures and videos behind a password, like Samsung's Secure Folder or Goog
   - Backups or cloud sync that already copied the originals keep their copies.
   - It needs `python-cryptography`, which `update.sh` and the AUR package install.
 
+### Phone sync (KDE Connect)
+
+One Gallery imports new photos and videos from your Android phone over Wi-Fi. It uses KDE Connect, which most Plasma desktops already have. Nothing goes through the cloud.
+
+**Set up, once:**
+1. Install KDE Connect and sshfs on the computer: `sudo pacman -S kdeconnect sshfs`. Install **KDE Connect** on the phone from Google Play or F-Droid.
+2. Pair the phone with the computer in KDE Connect (both on the same Wi-Fi).
+3. On the phone, open KDE Connect, tap the computer, and in its plugin settings allow **Filesystem expose** and choose the storage to share. On the computer, keep the **Remote filesystem browser** plugin turned on for the phone (*System Settings → KDE Connect → the phone*).
+4. In One Gallery, open the **Folders** tab. Under **Phones** the phone shows up as *connected*. Choose:
+   - **Import all:** copies every photo and video that's on the phone now.
+   - **Only new ones:** remembers what's on the phone now and imports only what you take from now on.
+
+**After that:**
+- While the phone is connected, new photos are imported by themselves (every 10 minutes at most). Turn this off with the switch on the phone's card; **Sync now** imports straight away, and **Stop** stops a running import.
+- Photos go to `~/Pictures/Phone/<phone name>/`, in `Camera` and `Screenshots` folders, with their original dates. That folder is added to the gallery by itself (unless `~/Pictures` is already in it).
+- Imported from: everything in the phone's `DCIM` folder (the camera), and `DCIM/Screenshots` and `Pictures/Screenshots` unless you turn off **Settings → Phones → Import screenshots**. SD cards are included. Hidden and trashed files are skipped.
+- Each file is imported **once**. Deleting a picture on the computer doesn't bring it back next time, and photos are never deleted or changed on the phone.
+- **✕ (Stop syncing)** forgets the phone. The photos already imported stay.
+- The **folder** button opens the phone's folder in Dolphin.
+- Phone sync needs Linux with KDE Connect running; the **Phones** section is hidden otherwise.
+
 ### Collections: Stories, Places and People
 
 The **Collections** tab (third in the bottom bar, `Ctrl+3`) has three sections.
@@ -483,6 +505,7 @@ To fix only the packaging of the same version (a dependency, say), raise `pkgrel
 | Face models (People) | `~/.local/share/onegallery/models/` |
 | Town list (Places) | `~/.local/share/onegallery/geo/` |
 | Private album (encrypted) | `~/.local/share/onegallery/private/` |
+| Photos imported from phones | `~/Pictures/Phone/<phone name>/` (which phones and files were imported: settings file and index) |
 | Face thumbnails | `~/.cache/onegallery/faces/` |
 | Wallpaper / lock screen copies | `~/.local/share/onegallery/wallpapers/` (the 8 most recent; the wallpaper keeps working if the original moves) |
 
@@ -509,6 +532,7 @@ On Linux, the paths follow `XDG_CONFIG_HOME`, `XDG_DATA_HOME` and `XDG_CACHE_HOM
 .venv/bin/python tools/video_smoke.py --out ui-shots      # videos: mixed timeline, Videos tab, preview, player (needs ffmpeg)
 .venv/bin/python tools/viewer_menu_smoke.py --out ui-shots # viewer ⋮ menu, Set as, print sheet (prints to PDF)
 .venv/bin/python tools/private_smoke.py --out ui-shots     # private album: password, move in / out, lock
+.venv/bin/python tools/phone_smoke.py --out ui-shots       # phone sync with a fake KDE Connect phone
 .venv/bin/python tools/make_samples.py samples --count 5000 --videos 40   # also add sample videos (needs ffmpeg)
 ```
 
@@ -527,6 +551,7 @@ backend/desktop.py    set as wallpaper / lock screen (Plasma, with GNOME and mac
 backend/printing.py   printing through CUPS (Qt Print Support) and Save as PDF
 backend/vault.py      private album storage: scrypt + AES-256-GCM, chunked file encryption
 backend/private.py    private album: move in / out, decrypting image provider, videos
+backend/phone.py      phone sync: KDE Connect over D-Bus (busctl), import new photos
 backend/watcher.py    watchdog (inotify) live updates
 backend/models.py     PhotoModel (rows of thumbnails + day sections), AlbumModel
 backend/thumbs.py     async image providers: image://thumbs (disk-cached), image://full
