@@ -14,6 +14,7 @@ One Gallery is a desktop photo and video gallery for Arch-based Linux (Manjaro) 
   - **People:** on-device face grouping, with naming, merging and hiding.
 - **Folders tab:** add or remove watched folders and rescan. Removing a folder **never deletes files**.
 - **Phone sync:** new photos and videos from your Android phone arrive over Wi-Fi through KDE Connect, with no cable and no cloud. See [Phone sync](#phone-sync-kde-connect).
+- **Desktop widget:** *One Gallery Memories* puts a photo frame on your Plasma desktop or panel. It shows pictures from this day in earlier years, your favorites, or your latest photos. See [Memories widget](#memories-widget-kde-plasma).
 - **Selection mode:** right-click or long-press a picture, or tick a day header to select the whole day. Actions: Delete (to the trash), Share, Open with, Copy path, Show in folder.
 - **Share menu:** the same options as Dolphin's *Share* submenu: Copy to Clipboard, KDE Connect, Bluetooth, e-mail, Telegram, Imgur, Nextcloud, Google Drive and anything else your KDE has installed.
 - **Viewer:** arrow keys or swipe to move between pictures, wheel or double-click or pinch to zoom, drag to pan, and a Details panel. The ⋮ menu offers:
@@ -379,6 +380,32 @@ The **Collections** tab (third in the bottom bar, `Ctrl+3`) has three sections.
 - Only face boxes and face "fingerprints" (embeddings) are stored, in the index. **Settings → Collections → Delete face data** removes them all.
 - People needs OpenCV (`opencv-python-headless`), which `./update.sh` installs. For the Arch package, install `python-opencv`.
 
+### Memories widget (KDE Plasma)
+
+**One Gallery Memories** is a Plasma 6 widget: a photo frame that cross-fades through your pictures with a slow zoom and shows when each was taken.
+
+**Add it:** right-click the desktop (or a panel) → **Add Widgets…** → search for **One Gallery Memories** → drag it onto the desktop.
+- The AUR package and `packaging/install-user.sh` (also run by `./update.sh`) install it.
+- If it isn't listed right after installing, log out and back in, or run `plasmashell --replace &`. Do the same after an update to load the new version.
+
+**What it shows** (right-click the widget → **Configure One Gallery Memories…**):
+- **Memories** (the default): the same pictures as today's [Stories](#collections-stories-places-and-people). On days without memories it shows favorites, then your most recent pictures.
+- **Favorites:** a different set of up to 40 favorites each day.
+- **Recent pictures:** your 40 newest pictures.
+- You can also set how long each picture stays, choose between filling the frame and fitting the whole picture, and turn off the slow zoom or the caption.
+
+**Using it:**
+- Click a picture to open it in One Gallery's viewer.
+- Hover to show ‹ › buttons, or scroll the mouse wheel to move between pictures. The slideshow pauses while the pointer is over it.
+- The widget's edit toolbar has **Show background**. Turn it off for a frameless, rounded photo.
+- In a panel, the widget shows a small picture; click it to open the frame.
+
+**How it works:** the widget doesn't read your library itself. One Gallery writes the pictures it needs to `~/.cache/onegallery/widget/`:
+- `feed.json` lists them.
+- Each picture is saved as an upright copy of at most 1280 px, so HEIC photos and pictures on unplugged drives still work.
+- While One Gallery is open, it updates that folder when your library or favorites change, but only if the widget is on your desktop.
+- When One Gallery isn't running, the widget runs `onegallery --widget-feed` itself once a day. That command builds the feed without opening a window.
+
 ### Editing photos
 
 Open a picture and click the **pencil** (or press **E**).
@@ -508,6 +535,7 @@ To fix only the packaging of the same version (a dependency, say), raise `pkgrel
 | Photos imported from phones | `~/Pictures/Phone/<phone name>/` (which phones and files were imported: settings file and index) |
 | Face thumbnails | `~/.cache/onegallery/faces/` |
 | Wallpaper / lock screen copies | `~/.local/share/onegallery/wallpapers/` (the 8 most recent; the wallpaper keeps working if the original moves) |
+| Memories widget pictures | `~/.cache/onegallery/widget/` (rebuilt when needed; safe to delete) |
 
 On macOS, everything above is in `~/Library/Application Support/One Gallery/` (the same names, without `onegallery/`), and the caches are in `~/Library/Caches/One Gallery/`.
 
@@ -533,6 +561,7 @@ On Linux, the paths follow `XDG_CONFIG_HOME`, `XDG_DATA_HOME` and `XDG_CACHE_HOM
 .venv/bin/python tools/viewer_menu_smoke.py --out ui-shots # viewer ⋮ menu, Set as, print sheet (prints to PDF)
 .venv/bin/python tools/private_smoke.py --out ui-shots     # private album: password, move in / out, lock
 .venv/bin/python tools/phone_smoke.py --out ui-shots       # phone sync with a fake KDE Connect phone
+.venv/bin/python tools/widget_smoke.py --out ui-shots      # Plasma Memories widget's photo frame
 .venv/bin/python tools/make_samples.py samples --count 5000 --videos 40   # also add sample videos (needs ffmpeg)
 ```
 
@@ -552,6 +581,7 @@ backend/printing.py   printing through CUPS (Qt Print Support) and Save as PDF
 backend/vault.py      private album storage: scrypt + AES-256-GCM, chunked file encryption
 backend/private.py    private album: move in / out, decrypting image provider, videos
 backend/phone.py      phone sync: KDE Connect over D-Bus (busctl), import new photos
+backend/widget.py     feed for the Plasma Memories widget (--widget-feed)
 backend/watcher.py    watchdog (inotify) live updates
 backend/models.py     PhotoModel (rows of thumbnails + day sections), AlbumModel
 backend/thumbs.py     async image providers: image://thumbs (disk-cached), image://full
@@ -568,6 +598,7 @@ backend/tasks.py      run work on the thread pool, get results on the GUI thread
 qml/                  Main.qml, Theme.qml (all colours/sizes), views, components/
 packaging/            .desktop file, icon, PKGBUILD, user install script
 packaging/aur/        AUR packages (onegallery, onegallery-git) and publish.sh
+packaging/plasmoid/   One Gallery Memories, the Plasma 6 desktop / panel widget
 packaging/windows/    Windows build: PyInstaller spec, Inno Setup script, build.ps1, icon
 packaging/macos/      Mac build: PyInstaller spec, build.sh, icon
 tools/                sample generator, UI smoke test

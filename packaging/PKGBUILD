@@ -36,6 +36,8 @@ package() {
     install -Dm644 packaging/icon.svg "$pkgdir/usr/share/onegallery/packaging/icon.svg"
     install -Dm644 packaging/icon.svg "$pkgdir/usr/share/icons/hicolor/scalable/apps/onegallery.svg"
     install -Dm644 packaging/onegallery.desktop "$pkgdir/usr/share/applications/onegallery.desktop"
+    install -dm755 "$pkgdir/usr/share/plasma/plasmoids"  # the Memories widget
+    cp -r packaging/plasmoid/org.kde.onegallery.memories "$pkgdir/usr/share/plasma/plasmoids/"
     install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
     install -Dm644 README.md "$pkgdir/usr/share/doc/$pkgname/README.md"
 

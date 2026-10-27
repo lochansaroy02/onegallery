@@ -36,6 +36,7 @@ from backend.phone import PhoneSync  # noqa: E402
 from backend.private import PrivateAlbum, PrivateImageProvider  # noqa: E402
 from backend.settings import Settings  # noqa: E402
 from backend.thumbs import ImageProvider  # noqa: E402
+from backend.widget import WidgetFeed, run_cli as widget_feed  # noqa: E402
 
 APP_ID = "onegallery"
 SERVER_NAME = f"{APP_ID}-{os.getuid()}" if hasattr(os, "getuid") else APP_ID
@@ -178,6 +179,7 @@ def create_app(argv=None, files=None):
     editor = Editor(app)
     private_album = PrivateAlbum(gallery, settings, app)
     phones = PhoneSync(gallery, settings, parent=app)
+    WidgetFeed(gallery, collections, app)  # Plasma Memories widget
     editor.libraryChanged.connect(gallery.reloadLibrary)
     editor.message.connect(gallery.toast)
 
@@ -261,6 +263,8 @@ def main():
     if SELF_TEST:
         sys.exit(self_test())
     args = sys.argv[1:]
+    if "--widget-feed" in args:  # run by the Plasma widget: refresh its pictures, no window
+        sys.exit(widget_feed())
     app = QGuiApplication.instance() or (MacApplication if sys.platform == "darwin" else QGuiApplication)(sys.argv)
     files = external.paths_from_args(args)
     if "--new-instance" not in args and forward_to_running_instance(files):

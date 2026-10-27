@@ -1,0 +1,19 @@
+{
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "One Gallery"
+            }
+        ],
+        "Category": "Graphics",
+        "Description": "Pictures taken on this day in earlier years, your favorites or your latest photos, from One Gallery",
+        "Icon": "onegallery",
+        "Id": "org.kde.onegallery.memories",
+        "License": "MIT",
+        "Name": "One Gallery Memories",
+        "Version": "0.3.0",
+        "Website": "https://github.com/lochansaroy02/onegallery"
+    },
+    "KPackageStructure": "Plasma/Applet",
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

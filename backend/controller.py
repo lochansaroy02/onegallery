@@ -92,6 +92,7 @@ class Gallery(QObject):
     libraryReloaded = Signal()
     printersLoaded = Signal("QVariantMap")   # {printers: [...], paper: "a4"}
     frameCaptured = Signal(str)              # path of the saved video frame
+    favoritesChanged = Signal()
 
     def __init__(self, settings: Settings, parent=None):
         super().__init__(parent)
@@ -479,6 +480,7 @@ class Gallery(QObject):
             for m in self._grids:
                 m.apply_favorite(ids, value)
             self.albums.reload()
+            self.favoritesChanged.emit()
 
         run_async(db.set_favorite, ids, value, on_done=done)
 
