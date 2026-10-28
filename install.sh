@@ -3,142 +3,188 @@
 #
 #   curl -fsSL https://raw.githubusercontent.com/lochansaroy02/onegallery/main/install.sh | bash
 #
-#   macOS            downloads OneGallery-<version>-macos-<arch>.dmg from the GitHub release
-#                    and copies "One Gallery.app" into /Applications
-#   Windows          (Git Bash / MSYS2 / Cygwin) downloads OneGallery-<version>-setup.exe from
-#                    the GitHub release and runs the installer (per-user, no admin rights)
-#   Arch / Manjaro   installs the 'onegallery' AUR package (with yay or paru, else makepkg)
-#   other Linux      clones the source and runs ./update.sh --install (a venv + launcher in ~/.local)
+#   Linux     clones https://github.com/lochansaroy02/onegallery and runs its ./update.sh --install:
+#             on Arch/Manjaro that installs the system packages with pacman (system Qt, needed for
+#             the KDE global menu), elsewhere a .venv with pip's PySide6; then the launcher, menu
+#             entry, icon and the Memories widget in ~/.local. An existing install is updated.
+#   macOS     downloads OneGallery-<version>-macos-<arch>.dmg from the latest GitHub release and
+#             copies "One Gallery.app" into /Applications
+#   Windows   (Git Bash / MSYS2 / Cygwin) downloads OneGallery-<version>-setup.exe from the latest
+#             GitHub release and runs the installer for your user (no admin rights)
 #
-# Options (pass them after "bash -s --", e.g. "curl ... | bash -s -- --version v0.3.0"):
-#   --version vX.Y.Z   install that release instead of the latest one
-#   -h, --help         show this help
+# Options (pass them after "bash -s --", e.g. "curl ... | bash -s -- --restart"):
+#   --version vX.Y.Z   macOS/Windows: install that release instead of the latest one
+#   --dir PATH         Linux: where to keep the source checkout (default ~/.local/share/onegallery-src)
+#   --restart          Linux/macOS: restart One Gallery afterwards if it is running
 #
-# Running it again updates an existing install. Your settings, library index and favorites live
-# outside the app and are never touched.
+# Your settings, library index, favorites and saved originals live outside the app
+# (~/.config/onegallery, ~/.local/share/onegallery, ~/Library/Application Support/One Gallery,
+# %APPDATA%\OneGallery) and are never touched.
 
-# everything is inside main(), so a download cut off halfway through can't run a partial script
+REPO="lochansaroy02/onegallery"
+
+# everything runs from main(), so a download cut off halfway through can't run half a script
 main() {
     set -euo pipefail
 
-    local repo="lochansaroy02/onegallery"
-    local version="" arg
+    version="" dir="" restart=0
     while [[ $# -gt 0 ]]; do
-        arg="$1"
-        case "$arg" in
+        case "$1" in
             --version) [[ $# -ge 2 ]] || fail "--version needs a tag, e.g. --version v0.3.0"
                        version="$2"; shift ;;
-            --version=*) version="${arg#*=}" ;;
+            --version=*) version="${1#*=}" ;;
+            --dir) [[ $# -ge 2 ]] || fail "--dir needs a path"
+                   dir="$2"; shift ;;
+            --dir=*) dir="${1#*=}" ;;
+            --restart) restart=1 ;;
             -h|--help) usage; exit 0 ;;
-            *) fail "unknown option: $arg (see --help)" ;;
+            *) fail "Unknown option: $1 (see --help)" ;;
         esac
         shift
     done
-    if [[ -n "$version" && "$version" != v* ]]; then
-        version="v$version"
-    fi
+    [[ -z "$version" || "$version" == v* ]] || version="v$version"
 
-    need curl
-
+    command -v curl >/dev/null 2>&1 || fail "curl is required"
     case "$(uname -s)" in
-        Darwin)                install_macos "$repo" "$version" ;;
-        MINGW*|MSYS*|CYGWIN*)  install_windows "$repo" "$version" ;;
-        Linux)                 install_linux "$repo" "$version" ;;
-        *)                     fail "unsupported system: $(uname -s). See https://github.com/$repo#readme" ;;
+        Linux)                install_linux ;;
+        Darwin)               install_macos ;;
+        MINGW*|MSYS*|CYGWIN*) install_windows ;;
+        *) fail "$(uname -s) is not supported. See https://github.com/$REPO#readme" ;;
     esac
 }
 
 usage() {
-    cat <<'EOF'
-Install One Gallery (macOS, Windows via Git Bash, Linux).
+    cat <<EOF
+Install or update One Gallery (Linux, macOS, Windows via Git Bash).
 
-  curl -fsSL https://raw.githubusercontent.com/lochansaroy02/onegallery/main/install.sh | bash
-  curl -fsSL .../install.sh | bash -s -- --version v0.3.0
+  curl -fsSL https://raw.githubusercontent.com/$REPO/main/install.sh | bash
+  curl -fsSL https://raw.githubusercontent.com/$REPO/main/install.sh | bash -s -- [options]
 
-Options:
-  --version vX.Y.Z   install that release instead of the latest one
-  -h, --help         show this help
+  --version vX.Y.Z   macOS/Windows: install that release instead of the latest one
+  --dir PATH         Linux: where to keep the source checkout (default ~/.local/share/onegallery-src)
+  --restart          Linux/macOS: restart One Gallery afterwards if it is running
 EOF
 }
 
 bold() { printf '\033[1m%s\033[0m\n' "$*"; }
 info() { printf '  %s\n' "$*"; }
-warn() { printf '\033[33mWarning:\033[0m %s\n' "$*" >&2; }
 fail() { printf '\033[31mError:\033[0m %s\n' "$*" >&2; exit 1; }
-need() { command -v "$1" >/dev/null 2>&1 || fail "'$1' is required but not installed"; }
 
-# prompts (sudo, yay, makepkg) must read the keyboard, not the piped script
-tty_in() {
+# the script itself arrives on stdin, so prompts (sudo, pacman) must read the terminal
+from_tty() {
     if [[ -r /dev/tty ]]; then "$@" </dev/tty; else "$@"; fi
 }
 
-# ---- GitHub release ---------------------------------------------------------------------------
+tmp="" mountpoint=""
+cleanup() {
+    [[ -z "$mountpoint" ]] || hdiutil detach -quiet "$mountpoint" >/dev/null 2>&1 || true
+    [[ -z "$tmp" ]] || rm -rf "$tmp"
+}
+make_tmp() {
+    tmp="$(mktemp -d 2>/dev/null || mktemp -d -t onegallery)"
+    trap cleanup EXIT
+}
 
-# Print the download URL of the release asset whose name ends with $3.
-release_asset_url() {
-    local repo="$1" version="$2" suffix="$3" api json url
-    if [[ -n "$version" ]]; then
-        api="https://api.github.com/repos/$repo/releases/tags/$version"
+# ---- Linux: source checkout + update.sh ---------------------------------------------------------
+# update.sh already knows how to install and update every kind of Linux install (system packages,
+# .venv, launcher, Arch package, renamed LGallery installs, running instance), so this only gets a
+# checkout and hands over to it.
+
+# the checkout an existing launcher runs, if any (~/.local/bin/onegallery: exec "<py>" "<dir>/main.py")
+installed_checkout() {
+    local launcher main
+    for launcher in "$HOME/.local/bin/onegallery" "$HOME/.local/bin/lgallery"; do
+        [[ -f "$launcher" ]] || continue
+        main="$(grep -o '"[^"]*/main\.py"' "$launcher" | head -n 1 | tr -d '"')"
+        [[ -n "$main" ]] || continue
+        main="$(dirname "$main")"
+        if [[ -x "$main/update.sh" && -d "$main/.git" ]]; then
+            printf '%s\n' "$main"
+            return
+        fi
+    done
+}
+
+install_linux() {
+    local here args=(--install)
+    [[ -z "$version" ]] || info "--version is for macOS/Windows; Linux installs the newest commit."
+    [[ $restart -eq 0 ]] || args+=(--restart)
+
+    if ! command -v git >/dev/null 2>&1; then
+        if command -v pacman >/dev/null 2>&1; then
+            bold "Installing git (you may be asked for your password)"
+            from_tty sudo pacman -S --needed --noconfirm git || fail "could not install git"
+        else
+            fail "git is required (Debian/Ubuntu: sudo apt install git, Fedora: sudo dnf install git)"
+        fi
+    fi
+    if ! command -v pacman >/dev/null 2>&1; then
+        # elsewhere update.sh builds a .venv with pip's PySide6
+        command -v python3 >/dev/null 2>&1 || fail "python3 is required (3.11 or newer)"
+        python3 -c 'import sys; sys.exit(0 if sys.version_info >= (3, 11) else 1)' \
+            || fail "One Gallery needs Python 3.11 or newer; this system has $(python3 --version 2>&1)"
+        python3 -c 'import venv, ensurepip' >/dev/null 2>&1 \
+            || fail "Python's venv module is missing (Debian/Ubuntu: sudo apt install python3-venv)"
+    fi
+
+    here="$dir"
+    [[ -n "$here" ]] || here="$(installed_checkout)"
+    [[ -n "$here" ]] || here="${XDG_DATA_HOME:-$HOME/.local/share}/onegallery-src"
+
+    if [[ -d "$here/.git" ]]; then
+        bold "Found One Gallery in $here"
+        # update.sh pulls first, then refreshes whatever is installed
+        from_tty "$here/update.sh" "${args[@]}"
+    elif [[ -e "$here" && -n "$(ls -A "$here" 2>/dev/null)" ]]; then
+        fail "$here exists and is not a One Gallery checkout; choose another folder with --dir"
     else
-        api="https://api.github.com/repos/$repo/releases/latest"
+        bold "Downloading One Gallery into $here"
+        mkdir -p "$(dirname "$here")"
+        git clone --quiet "https://github.com/$REPO.git" "$here" || fail "could not clone $REPO (offline?)"
+        from_tty "$here/update.sh" --no-pull "${args[@]}"
+    fi
+
+    info "Update later by running this command again, or: $here/update.sh"
+}
+
+# ---- macOS / Windows: GitHub release ------------------------------------------------------------
+
+# the download URL of the release asset whose name ends with $1
+release_asset() {
+    local api json url
+    if [[ -n "$version" ]]; then
+        api="https://api.github.com/repos/$REPO/releases/tags/$version"
+    else
+        api="https://api.github.com/repos/$REPO/releases/latest"
     fi
     json="$(curl -fsSL -H 'Accept: application/vnd.github+json' "$api")" \
-        || fail "could not read the release from GitHub ($api). Offline, or rate-limited? Try again later."
-    url="$(printf '%s\n' "$json" \
-        | grep -o '"browser_download_url": *"[^"]*"' \
-        | sed 's/.*"\(https:[^"]*\)"$/\1/' \
-        | grep -- "$suffix\$" \
-        | head -n 1 || true)"
-    [[ -n "$url" ]] || fail "the ${version:-latest} release has no '*$suffix' download. See https://github.com/$repo/releases"
+        || fail "could not read the ${version:-latest} release from GitHub (offline, or no such release?)"
+    url="$(printf '%s\n' "$json" | grep -o '"browser_download_url": *"[^"]*"' \
+           | sed 's/.*"\(https:[^"]*\)"$/\1/' | grep -- "$1\$" | head -n 1 || true)"
+    [[ -n "$url" ]] || fail "the ${version:-latest} release has no *$1 download (https://github.com/$REPO/releases)"
     printf '%s\n' "$url"
 }
 
 download() {
-    local url="$1" dest="$2"
-    bold "Downloading ${url##*/}"
-    curl -fL --progress-bar --retry 3 -o "$dest" "$url" || fail "download failed: $url"
+    bold "Downloading ${1##*/}"
+    curl -fL --progress-bar --retry 3 -o "$2" "$1" || fail "download failed: $1"
 }
-
-make_tmpdir() {
-    tmp="$(mktemp -d 2>/dev/null || mktemp -d -t onegallery)"
-    trap 'cleanup' EXIT
-}
-
-cleanup() {
-    if [[ -n "${mountpoint:-}" ]]; then
-        hdiutil detach -quiet "$mountpoint" >/dev/null 2>&1 || true
-    fi
-    if [[ -n "${tmp:-}" ]]; then
-        rm -rf "$tmp"
-    fi
-}
-
-# ---- macOS ------------------------------------------------------------------------------------
 
 install_macos() {
-    local repo="$1" version="$2" arch major url dmg app dest_dir dest
-    need hdiutil
-    need ditto
-
+    local arch url dmg app dest_dir dest running=0
     arch="$(uname -m)"
-    # a shell running under Rosetta reports x86_64 on an Apple Silicon Mac
-    if [[ "$arch" == x86_64 && "$(sysctl -n sysctl.proc_translated 2>/dev/null || echo 0)" == 1 ]]; then
-        arch=arm64
-    fi
-    major="$(sw_vers -productVersion | cut -d. -f1)"
-    if [[ "$major" -lt 13 ]]; then
-        fail "One Gallery needs macOS 13 (Ventura) or newer; this Mac has $(sw_vers -productVersion)."
-    fi
-
+    # a shell running under Rosetta reports x86_64 on Apple Silicon
+    [[ "$(sysctl -n sysctl.proc_translated 2>/dev/null || echo 0)" != 1 ]] || arch=arm64
+    [[ "$(sw_vers -productVersion | cut -d. -f1)" -ge 13 ]] \
+        || fail "One Gallery needs macOS 13 (Ventura) or newer; this Mac has $(sw_vers -productVersion)"
     if [[ "$arch" != arm64 ]]; then
-        # releases ship an Apple Silicon build; use an Intel one only if a release has it
-        url="$(release_asset_url "$repo" "$version" "-macos-$arch.dmg" 2>/dev/null)" \
-            || fail "there is no download for Intel Macs yet. Build it yourself: https://github.com/$repo#building-the-mac-app"
+        url="$(release_asset "-macos-$arch.dmg" 2>/dev/null)" \
+            || fail "there is no download for Intel Macs yet; build it yourself: https://github.com/$REPO#building-the-mac-app"
     else
-        url="$(release_asset_url "$repo" "$version" "-macos-arm64.dmg")"
+        url="$(release_asset "-macos-arm64.dmg")"
     fi
 
-    make_tmpdir
+    make_tmp
     dmg="$tmp/${url##*/}"
     download "$url" "$dmg"
 
@@ -147,7 +193,7 @@ install_macos() {
     mkdir -p "$mountpoint"
     hdiutil attach -quiet -nobrowse -readonly -noautoopen -mountpoint "$mountpoint" "$dmg" \
         || fail "could not open the disk image"
-    app="$(find "$mountpoint" -maxdepth 1 -name '*.app' -print | head -n 1)"
+    app="$(find "$mountpoint" -maxdepth 1 -name '*.app' | head -n 1)"
     [[ -n "$app" ]] || fail "no app found in the disk image"
 
     dest_dir=/Applications
@@ -158,115 +204,51 @@ install_macos() {
     fi
     dest="$dest_dir/$(basename "$app")"
 
-    if pgrep -xq OneGallery 2>/dev/null ||pgrep -fq "$dest/Contents/MacOS/" 2>/dev/null; then
+    if pgrep -xq OneGallery 2>/dev/null; then
+        running=1
         info "Closing the running One Gallery"
         osascript -e 'quit app "One Gallery"' >/dev/null 2>&1 || true
-        sleep 2
+        for _ in 1 2 3 4 5 6 7 8 9 10; do
+            pgrep -xq OneGallery 2>/dev/null || break
+            sleep 0.5
+        done
     fi
     rm -rf "$dest"
     ditto "$app" "$dest" || fail "could not copy the app to $dest_dir"
-    # not signed with a Developer ID yet: drop the quarantine flag so Gatekeeper lets it open
+    # not signed with an Apple Developer ID yet: without this Gatekeeper blocks the first start
     xattr -dr com.apple.quarantine "$dest" 2>/dev/null || true
-
     hdiutil detach -quiet "$mountpoint" >/dev/null 2>&1 || true
     mountpoint=""
+    info "Installed $dest"
 
-    bold "Installed: $dest"
-    info "Open it from Launchpad or Applications (or run: open \"$dest\")."
-    if ! command -v ffmpeg >/dev/null 2>&1; then
-        info "For video thumbnails install ffmpeg: brew install ffmpeg"
+    if [[ $running -eq 1 && $restart -eq 1 ]]; then
+        open "$dest"
+        info "One Gallery restarted."
+    elif [[ $running -eq 1 ]]; then
+        info "Open One Gallery again to use the new version."
+    else
+        info "Open it from Launchpad or Applications."
     fi
+    command -v ffmpeg >/dev/null 2>&1 || info "For video thumbnails install ffmpeg: brew install ffmpeg"
+    bold "Install complete."
 }
 
-# ---- Windows (Git Bash / MSYS2 / Cygwin) ------------------------------------------------------
-
 install_windows() {
-    local repo="$1" version="$2" url exe winexe
-    url="$(release_asset_url "$repo" "$version" "-setup.exe")"
-
-    make_tmpdir
+    local url exe
+    url="$(release_asset "-setup.exe")"
+    make_tmp
     exe="$tmp/${url##*/}"
     download "$url" "$exe"
 
     bold "Running the One Gallery installer"
-    info "Installs for your user (no admin rights). Windows SmartScreen may warn because the"
-    info "installer isn't code-signed yet: choose 'More info' > 'Run anyway'."
-    winexe="$exe"
-    if command -v cygpath >/dev/null 2>&1; then
-        winexe="$(cygpath -w "$exe")"
-    fi
-    # Inno Setup: /SILENT shows only a progress window, /CURRENTUSER skips the admin prompt
-    if command -v cmd.exe >/dev/null 2>&1; then
-        MSYS2_ARG_CONV_EXCL='*' cmd.exe //c "\"$winexe\" /SILENT /CURRENTUSER /SUPPRESSMSGBOXES /NORESTART" \
-            || fail "the installer did not finish"
-    else
-        "$exe" /SILENT /CURRENTUSER /SUPPRESSMSGBOXES /NORESTART || fail "the installer did not finish"
-    fi
-
-    bold "Installed."
+    info "It installs for your user, no admin rights needed. The installer isn't code-signed yet,"
+    info "so if SmartScreen warns, choose 'More info' > 'Run anyway'."
+    # Inno Setup switches; MSYS2_ARG_CONV_EXCL stops Git Bash from turning /SILENT into a path.
+    # A running One Gallery is closed by the installer and not reopened in silent mode.
+    MSYS2_ARG_CONV_EXCL='*' "$exe" /SILENT /CURRENTUSER /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS \
+        || fail "the installer did not finish"
     info "Open One Gallery from the Start menu."
-}
-
-# ---- Linux ------------------------------------------------------------------------------------
-
-install_linux() {
-    local repo="$1" version="$2"
-    if [[ -n "$version" ]]; then
-        warn "--version is ignored on Linux: it installs the current package/source"
-    fi
-    if command -v pacman >/dev/null 2>&1; then
-        install_arch
-    else
-        install_from_source "$repo"
-    fi
-}
-
-install_arch() {
-    local helper="" h build
-    for h in yay paru; do
-        if command -v "$h" >/dev/null 2>&1; then helper="$h"; break; fi
-    done
-
-    if [[ -n "$helper" ]]; then
-        bold "Installing the 'onegallery' AUR package with $helper"
-        tty_in "$helper" -S --needed onegallery || fail "$helper could not install onegallery"
-    else
-        bold "Building the 'onegallery' AUR package with makepkg"
-        info "(you may be asked for your password)"
-        tty_in sudo pacman -S --needed base-devel git || fail "could not install base-devel and git"
-        make_tmpdir
-        build="$tmp/onegallery"
-        git clone --depth 1 https://aur.archlinux.org/onegallery.git "$build" \
-            || fail "could not download the AUR package"
-        ( cd "$build" && tty_in makepkg -si --needed ) || fail "makepkg failed"
-    fi
-
-    bold "Installed."
-    info "One Gallery is in the application launcher (command: onegallery)."
-    info "Updates now come with your normal system update ($([[ -n "$helper" ]] && echo "$helper -Syu" || echo "rerun this script"))."
-}
-
-install_from_source() {
-    local repo="$1" src="${XDG_DATA_HOME:-$HOME/.local/share}/onegallery-app"
-    need git
-    need python3
-    python3 -c 'import sys; sys.exit(0 if sys.version_info >= (3, 11) else 1)' \
-        || fail "One Gallery needs Python 3.11 or newer; this system has $(python3 --version 2>&1)"
-    python3 -c 'import venv, ensurepip' >/dev/null 2>&1 \
-        || fail "Python's venv module is missing. On Debian/Ubuntu: sudo apt install python3-venv"
-
-    if [[ -d "$src/.git" ]]; then
-        bold "Updating One Gallery in $src"
-        "$src/update.sh" --install
-    else
-        bold "Downloading One Gallery into $src"
-        git clone --depth 1 "https://github.com/$repo.git" "$src" || fail "could not clone $repo"
-        "$src/update.sh" --no-pull --install
-    fi
-
-    bold "Installed."
-    info "One Gallery is in the application launcher (command: ~/.local/bin/onegallery)."
-    info "Update later by running this script again, or: $src/update.sh"
+    bold "Install complete."
 }
 
 main "$@"

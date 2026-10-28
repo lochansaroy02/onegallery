@@ -2,7 +2,7 @@
 
 One Gallery is a desktop photo and video gallery for Arch-based Linux (Manjaro) on KDE Plasma, styled after Samsung One UI's Gallery app. You choose the folders it shows, including folders on other drives. It indexes them in the background and lists your pictures and videos newest first, grouped by day, the way a phone gallery does. It also runs on [Windows](#windows) and [macOS](#macos).
 
-> **Renamed from LGallery.** Your settings, library, favorites, private album and saved originals move over by themselves the first time One Gallery starts (`~/.config/lgallery` → `~/.config/onegallery`, and the same for `~/.local/share` and `~/.cache`; on Windows `%APPDATA%\LGallery` → `%APPDATA%\OneGallery` and `%LOCALAPPDATA%\LGallery` → `%LOCALAPPDATA%\OneGallery`). The command is now `onegallery`. `./update.sh` replaces an old install, and the AUR package is now `onegallery` (it replaces `lgallery`).
+> **Renamed from LGallery.** Your settings, library, favorites, private album and saved originals move over by themselves the first time One Gallery starts (`~/.config/lgallery` → `~/.config/onegallery`, and the same for `~/.local/share` and `~/.cache`; on Windows `%APPDATA%\LGallery` → `%APPDATA%\OneGallery` and `%LOCALAPPDATA%\LGallery` → `%LOCALAPPDATA%\OneGallery`). The command is now `onegallery`. `./update.sh` replaces an old install.
 
 - **Pictures tab:** day headers that stay visible while you scroll ("Today", "Yesterday", "Fri, Oct 23"), a title that shrinks as you scroll, a fast-scroll handle with a month bubble, and **Ctrl + mouse wheel** or **Ctrl +/-** to change the number of columns.
 - **Videos:** videos sit among your pictures in date order, with a ▶ length badge. The **Videos tab** lists only videos. Opening a video plays it straight away, **muted**, with a mute button. **Play video** opens the built-in player with sound (see [Videos](#videos)).
@@ -38,25 +38,21 @@ One Gallery is a desktop photo and video gallery for Arch-based Linux (Manjaro) 
   - The shader is `qml/shaders/liquidglass.frag`. Run `qml/shaders/build.sh` after editing it; the compiled `.qsb` is committed.
 - **Accent colour:** by default One Gallery uses **KDE's accent colour** (*System Settings → Colors & Themes → Colors → Accent color*, including *From wallpaper*), and it updates live when you change it. **Settings → Appearance → Accent colour** (or **View ▸ Accent Colour**) offers 12 other colours or any custom colour.
 
-## Install from the AUR (easiest)
+## Quick install
 
-One Gallery is in the [Arch User Repository](https://aur.archlinux.org/packages/onegallery). Install it with an AUR helper:
-
-```bash
-yay -S onegallery          # or: paru -S onegallery
-```
-
-Updates then come with your normal system update (`yay` / `paru`). `onegallery-git` instead builds the newest commit (`yay -S onegallery-git`, updated by `yay -Syu --devel`).
-
-`pacman` itself can't download from the AUR. Without a helper, build it by hand:
+One command installs One Gallery on Linux, macOS and Windows (in Git Bash):
 
 ```bash
-sudo pacman -S --needed base-devel git
-git clone https://aur.archlinux.org/onegallery.git
-cd onegallery && makepkg -si
+curl -fsSL https://raw.githubusercontent.com/lochansaroy02/onegallery/main/install.sh | bash
 ```
 
-Optional extras: `sudo pacman -S python-pillow-heif python-opencv python-watchdog purpose kdeconnect sshfs` (HEIC photos, People, live updates, the KDE share menu, phone sync).
+- **Linux:** clones this repository into `~/.local/share/onegallery-src` and runs `./update.sh --install` there (see [Install from source](#install-from-source-on-arch--manjaro)). If One Gallery is already installed, it updates that install instead.
+- **macOS:** downloads the `.dmg` from the latest [release](https://github.com/lochansaroy02/onegallery/releases) and copies **One Gallery** into Applications.
+- **Windows:** downloads the `-setup.exe` from the latest release and runs it for your user.
+
+Options go after `bash -s --`, e.g. `curl … | bash -s -- --restart`: `--version v0.3.0` (macOS/Windows: a specific release), `--dir PATH` (Linux: where the checkout lives), `--restart` (Linux/macOS: reopen a running One Gallery).
+
+Optional extras on Arch / Manjaro: `sudo pacman -S python-pillow-heif python-opencv python-watchdog purpose kdeconnect sshfs` (HEIC photos, People, live updates, the KDE share menu, phone sync).
 
 ## Windows
 
@@ -333,7 +329,7 @@ Keep pictures and videos behind a password, like Samsung's Secure Folder or Goog
 - **Limits:**
   - Deleting the original doesn't wipe the disk blocks it used, so tools that recover deleted files may still find older copies.
   - Backups or cloud sync that already copied the originals keep their copies.
-  - It needs `python-cryptography`, which `update.sh` and the AUR package install.
+  - It needs `python-cryptography`, which `update.sh` installs.
 
 ### Phone sync (KDE Connect)
 
@@ -385,7 +381,7 @@ The **Collections** tab (third in the bottom bar, `Ctrl+3`) has three sections.
 **One Gallery Memories** is a Plasma 6 widget: a photo frame that cross-fades through your pictures with a slow zoom and shows when each was taken.
 
 **Add it:** right-click the desktop (or a panel) → **Add Widgets…** → search for **One Gallery Memories** → drag it onto the desktop.
-- The AUR package and `packaging/install-user.sh` (also run by `./update.sh`) install it.
+- `packaging/install-user.sh` (also run by `./update.sh`) and the Arch package install it.
 - If it isn't listed right after installing, log out and back in, or run `plasmashell --replace &`. Do the same after an update to load the new version.
 
 **What it shows** (right-click the widget → **Configure One Gallery Memories…**):
@@ -502,33 +498,6 @@ Items enable themselves from context: a picture open in the viewer, a selection,
 | Editor: Ctrl+S / Ctrl+Shift+S | Save / Save as copy |
 | Editor: hold \\ | Compare with the original |
 
-## Publishing to the AUR
-
-For the maintainer. The recipes are in `packaging/aur/`: `onegallery` builds tagged releases (downloaded from GitHub), and `onegallery-git` builds the latest commit. `packaging/aur/publish.sh` checks, builds and uploads them.
-
-**One-time setup** (on Arch / Manjaro):
-
-1. Create an account on <https://aur.archlinux.org/register>.
-2. Make an SSH key and add the **public** key under *My Account → SSH Public Key*:
-   ```bash
-   ssh-keygen -t ed25519 -f ~/.ssh/aur -C "aur"
-   cat ~/.ssh/aur.pub          # paste this on the AUR website
-   printf 'Host aur.archlinux.org\n  IdentityFile ~/.ssh/aur\n  User aur\n' >> ~/.ssh/config
-   ```
-3. Install the tools: `sudo pacman -S --needed base-devel git pacman-contrib namcap`.
-4. Put your name in the first line of `packaging/aur/onegallery/PKGBUILD` and `packaging/aur/onegallery-git/PKGBUILD`:
-   `# Maintainer: Your Name <you at example dot com>` (the AUR shows this publicly).
-
-**Releasing a version:**
-
-1. Set the version in `backend/__init__.py`, `pyproject.toml`, `packaging/PKGBUILD` and `packaging/aur/onegallery/PKGBUILD` (`pkgver=`, with `pkgrel=1`). Commit and push.
-2. Tag the release and push the tag: `git tag v0.3.0 && git push origin v0.3.0`.
-3. Try it without uploading: `packaging/aur/publish.sh --dry-run`.
-4. Upload: `packaging/aur/publish.sh`. It fills in the checksum, builds both packages, writes `.SRCINFO` and pushes them to `ssh://aur@aur.archlinux.org/<package>.git`.
-5. Commit the updated `packaging/aur/*/PKGBUILD` files.
-
-To fix only the packaging of the same version (a dependency, say), raise `pkgrel` instead of the version and run `publish.sh onegallery`. The `-git` package needs re-uploading only when its PKGBUILD changes; yay and paru rebuild it from new commits on their own.
-
 ## Where data lives
 
 | What | Path |
@@ -605,7 +574,6 @@ backend/controller.py glue object exposed to QML as `gallery`
 backend/tasks.py      run work on the thread pool, get results on the GUI thread
 qml/                  Main.qml, Theme.qml (all colours/sizes), views, components/
 packaging/            .desktop file, icon, PKGBUILD, user install script
-packaging/aur/        AUR packages (onegallery, onegallery-git) and publish.sh
 packaging/plasmoid/   One Gallery Memories, the Plasma 6 desktop / panel widget
 packaging/windows/    Windows build: PyInstaller spec, Inno Setup script, build.ps1, icon
 packaging/macos/      Mac build: PyInstaller spec, build.sh, icon
