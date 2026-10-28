@@ -4,6 +4,34 @@ One Gallery is a desktop photo and video gallery for Arch-based Linux (Manjaro) 
 
 > **Renamed from LGallery.** Your settings, library, favorites, private album and saved originals move over by themselves the first time One Gallery starts (`~/.config/lgallery` → `~/.config/onegallery`, and the same for `~/.local/share` and `~/.cache`; on Windows `%APPDATA%\LGallery` → `%APPDATA%\OneGallery` and `%LOCALAPPDATA%\LGallery` → `%LOCALAPPDATA%\OneGallery`). The command is now `onegallery`. `./update.sh` replaces an old install.
 
+## Quick install
+
+One command installs or updates One Gallery on Linux, macOS and Windows. Paste it into a terminal (on Windows, into **Git Bash**):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/lochansaroy02/onegallery/main/install.sh | bash
+```
+
+- **Linux:** clones this repository into `~/.local/share/onegallery-src` and runs `./update.sh --install` there (see [Install from source](#install-from-source-on-arch--manjaro)). If One Gallery is already installed, it updates that install instead.
+- **macOS:** downloads the `.dmg` from the latest [release](https://github.com/lochansaroy02/onegallery/releases) and copies **One Gallery** into Applications.
+- **Windows:** downloads the `-setup.exe` from the latest release and runs it for your user.
+
+Run the same command again to update. Options go after `bash -s --`:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/lochansaroy02/onegallery/main/install.sh | bash -s -- --restart
+```
+
+| Option | What it does |
+| --- | --- |
+| `--version v0.3.0` | macOS / Windows: install that release instead of the latest |
+| `--dir PATH` | Linux: where to keep the source checkout (default `~/.local/share/onegallery-src`) |
+| `--restart` | Linux / macOS: reopen One Gallery afterwards if it was running |
+
+Optional extras on Arch / Manjaro: `sudo pacman -S python-pillow-heif python-opencv python-watchdog purpose kdeconnect sshfs` (HEIC photos, People, live updates, the KDE share menu, phone sync).
+
+## Features
+
 - **Pictures tab:** day headers that stay visible while you scroll ("Today", "Yesterday", "Fri, Oct 23"), a title that shrinks as you scroll, a fast-scroll handle with a month bubble, and **Ctrl + mouse wheel** or **Ctrl +/-** to change the number of columns.
 - **Videos:** videos sit among your pictures in date order, with a ▶ length badge. The **Videos tab** lists only videos. Opening a video plays it straight away, **muted**, with a mute button. **Play video** opens the built-in player with sound (see [Videos](#videos)).
 - **Albums tab:** one album per watched folder, or one per sub-folder (a setting), plus **Favorites** and **Videos**.
@@ -38,27 +66,11 @@ One Gallery is a desktop photo and video gallery for Arch-based Linux (Manjaro) 
   - The shader is `qml/shaders/liquidglass.frag`. Run `qml/shaders/build.sh` after editing it; the compiled `.qsb` is committed.
 - **Accent colour:** by default One Gallery uses **KDE's accent colour** (*System Settings → Colors & Themes → Colors → Accent color*, including *From wallpaper*), and it updates live when you change it. **Settings → Appearance → Accent colour** (or **View ▸ Accent Colour**) offers 12 other colours or any custom colour.
 
-## Quick install
-
-One command installs One Gallery on Linux, macOS and Windows (in Git Bash):
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/lochansaroy02/onegallery/main/install.sh | bash
-```
-
-- **Linux:** clones this repository into `~/.local/share/onegallery-src` and runs `./update.sh --install` there (see [Install from source](#install-from-source-on-arch--manjaro)). If One Gallery is already installed, it updates that install instead.
-- **macOS:** downloads the `.dmg` from the latest [release](https://github.com/lochansaroy02/onegallery/releases) and copies **One Gallery** into Applications.
-- **Windows:** downloads the `-setup.exe` from the latest release and runs it for your user.
-
-Options go after `bash -s --`, e.g. `curl … | bash -s -- --restart`: `--version v0.3.0` (macOS/Windows: a specific release), `--dir PATH` (Linux: where the checkout lives), `--restart` (Linux/macOS: reopen a running One Gallery).
-
-Optional extras on Arch / Manjaro: `sudo pacman -S python-pillow-heif python-opencv python-watchdog purpose kdeconnect sshfs` (HEIC photos, People, live updates, the KDE share menu, phone sync).
-
 ## Windows
 
 One Gallery also runs on Windows 10 (1809 or newer) and 11, 64-bit.
 
-**Install:** download `OneGallery-<version>-setup.exe` from the [Releases page](https://github.com/lochansaroy02/onegallery/releases) and run it.
+**Install:** in Git Bash run `curl -fsSL https://raw.githubusercontent.com/lochansaroy02/onegallery/main/install.sh | bash` (see [Quick install](#quick-install)), or download `OneGallery-<version>-setup.exe` from the [Releases page](https://github.com/lochansaroy02/onegallery/releases) and run it.
 - No admin rights are needed: it installs for your user, or for everyone if you choose that on the first page.
 - It adds One Gallery to the Start menu, and optionally to the desktop.
 - It adds One Gallery to *Open with* for pictures and videos and to **Settings → Apps → Default apps**. Pick it there to open pictures from Explorer in One Gallery.
@@ -107,7 +119,13 @@ The app icon is `packaging/windows/onegallery.ico`. It's made from `packaging/ic
 
 One Gallery also runs on macOS 13 (Ventura) or newer. The download is for Apple Silicon Macs (M1 and later); on an Intel Mac, [build it yourself](#building-the-mac-app).
 
-**Install:**
+**Install with one command** (see [Quick install](#quick-install)); it also skips step 4 below:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/lochansaroy02/onegallery/main/install.sh | bash
+```
+
+**Or install by hand:**
 1. Download `OneGallery-<version>-macos-arm64.dmg` from the [Releases page](https://github.com/lochansaroy02/onegallery/releases).
 2. Open the `.dmg` and drag **One Gallery** onto the **Applications** folder.
 3. Eject the disk image and open One Gallery from Applications or Launchpad.
@@ -157,7 +175,7 @@ The app icon is `packaging/macos/onegallery.icns`. It's made from `packaging/ico
 
 ## Install from source on Arch / Manjaro
 
-There are two ways to install One Gallery as a KDE app from a checkout. Both add **One Gallery** to the application launcher (under *Graphics*) with its own icon, so you can pin it to the panel or task manager like any other app.
+The [Quick install](#quick-install) command does Option A for you (steps 1 and 2 below). To do it by hand, there are two ways to install One Gallery as a KDE app from a checkout. Both add **One Gallery** to the application launcher (under *Graphics*) with its own icon, so you can pin it to the panel or task manager like any other app.
 
 | | Option A: user install | Option B: Arch package |
 | --- | --- | --- |
