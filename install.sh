@@ -9,7 +9,7 @@
 #             entry, icon and the Memories widget in ~/.local. An existing install is updated.
 #   macOS     downloads OneGallery-<version>-macos-<arch>.dmg from the latest GitHub release and
 #             copies "One Gallery.app" into /Applications
-#   Windows   (Git Bash / MSYS2 / Cygwin) downloads OneGallery-<version>-setup.exe from the latest
+#   Windows   (Git Bash / MSYS2 / Cygwin; from PowerShell use install.ps1 instead) downloads OneGallery-<version>-setup.exe from the latest
 #             GitHub release and runs the installer for your user (no admin rights)
 #
 # Options (pass them after "bash -s --", e.g. "curl ... | bash -s -- --restart"):

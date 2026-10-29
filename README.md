@@ -6,17 +6,25 @@ One Gallery is a desktop photo and video gallery for Arch-based Linux (Manjaro) 
 
 ## Quick install
 
-One command installs or updates One Gallery on Linux, macOS and Windows. Paste it into a terminal (on Windows, into **Git Bash**):
+One command installs or updates One Gallery.
+
+**Linux and macOS** (Terminal):
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/lochansaroy02/onegallery/main/install.sh | bash
 ```
 
+**Windows** (PowerShell or Windows Terminal, no admin rights needed):
+
+```powershell
+irm https://raw.githubusercontent.com/lochansaroy02/onegallery/main/install.ps1 | iex
+```
+
 - **Linux:** clones this repository into `~/.local/share/onegallery-src` and runs `./update.sh --install` there (see [Install from source](#install-from-source-on-arch--manjaro)). If One Gallery is already installed, it updates that install instead.
 - **macOS:** downloads the `.dmg` from the latest [release](https://github.com/lochansaroy02/onegallery/releases) and copies **One Gallery** into Applications.
-- **Windows:** downloads the `-setup.exe` from the latest release and runs it for your user.
+- **Windows:** downloads the `-setup.exe` from the latest release and runs it for your user. (`install.sh` also works on Windows from Git Bash.)
 
-Run the same command again to update. Options go after `bash -s --`:
+Run the same command again to update. On Linux and macOS, options go after `bash -s --`:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/lochansaroy02/onegallery/main/install.sh | bash -s -- --restart
@@ -27,6 +35,12 @@ curl -fsSL https://raw.githubusercontent.com/lochansaroy02/onegallery/main/insta
 | `--version v0.3.0` | macOS / Windows: install that release instead of the latest |
 | `--dir PATH` | Linux: where to keep the source checkout (default `~/.local/share/onegallery-src`) |
 | `--restart` | Linux / macOS: reopen One Gallery afterwards if it was running |
+
+On Windows, run the script as a script block to pass `-Version v0.3.0` or `-Restart` (reopen One Gallery if it was running):
+
+```powershell
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/lochansaroy02/onegallery/main/install.ps1))) -Version v0.3.0
+```
 
 Optional extras on Arch / Manjaro: `sudo pacman -S python-pillow-heif python-opencv python-watchdog purpose kdeconnect sshfs` (HEIC photos, People, live updates, the KDE share menu, phone sync).
 
@@ -70,7 +84,7 @@ Optional extras on Arch / Manjaro: `sudo pacman -S python-pillow-heif python-ope
 
 One Gallery also runs on Windows 10 (1809 or newer) and 11, 64-bit.
 
-**Install:** in Git Bash run `curl -fsSL https://raw.githubusercontent.com/lochansaroy02/onegallery/main/install.sh | bash` (see [Quick install](#quick-install)), or download `OneGallery-<version>-setup.exe` from the [Releases page](https://github.com/lochansaroy02/onegallery/releases) and run it.
+**Install:** in PowerShell run `irm https://raw.githubusercontent.com/lochansaroy02/onegallery/main/install.ps1 | iex` (see [Quick install](#quick-install)), or download `OneGallery-<version>-setup.exe` from the [Releases page](https://github.com/lochansaroy02/onegallery/releases) and run it.
 - No admin rights are needed: it installs for your user, or for everyone if you choose that on the first page.
 - It adds One Gallery to the Start menu, and optionally to the desktop.
 - It adds One Gallery to *Open with* for pictures and videos and to **Settings → Apps → Default apps**. Pick it there to open pictures from Explorer in One Gallery.
