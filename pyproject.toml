@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "onegallery"
-version = "0.3.0"
+version = "0.4.0"
 description = "A One UI-style photo gallery for Linux / KDE Plasma"
 readme = "README.md"
 requires-python = ">=3.11"

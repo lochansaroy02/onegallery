@@ -1,8 +1,7 @@
 # Maintainer: Your Name <you at example dot com>
 # Builds a package from this source tree:  cd packaging && makepkg -si
-# (the AUR packages are in packaging/aur/)
 pkgname=onegallery
-pkgver=0.3.0
+pkgver=0.4.0
 pkgrel=1
 pkgdesc="One UI style photo and video gallery for KDE Plasma"
 arch=('any')
